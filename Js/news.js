@@ -1,62 +1,31 @@
-[
-  document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.getElementById("news-container");
+fetch('news.json')
+  .then(response => response.json())
+  .then(newsItems => {
+    const container = document.getElementById('news-container');
 
-  try {
-    const res = await fetch("data/News.json"); // ✅ Correct path to your news file
-    const newsData = await res.json();
+    newsItems.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'news-card';
 
-    newsData.forEach(article => {
-      const card = document.createElement("div");
-      card.className = "news-card";
+      // Optional tag class for future color-coding (e.g. tag.Policy)
+      const tagClass = item.tag ? `tag ${item.tag.replace(/\s+/g, '')}` : 'tag';
 
+      // Create inner card structure
       card.innerHTML = `
-        <h2 class="news-title">${article.title}</h2>
-        <p class="news-meta"><span class="news-tag">${article.tag}</span> · ${article.date}</p>
-        <p class="news-summary">${article.summary}</p>
-        <a class="news-link" href="${article.link}" target="_blank">Read more →</a>
+        <div class="${tagClass}">${item.tag}</div>
+        <h2>${item.title}</h2>
+        <p><strong>${item.date}</strong></p>
+        <p>${item.summary}</p>
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer">Read More</a>
       `;
 
       container.appendChild(card);
     });
-  } catch (error) {
-    console.error("Error loading news:", error);
-    container.innerHTML = "<p>Unable to load news at the moment. Please try again later.</p>";
-  }
-});
-  {
-    "title": "India Sets 7% Biomass Pellets Blend Target by 2025‑26",
-    "date": "July 18, 2025",
-    "summary": "India aims to co‑fire biomass pellets at 7 % blend in coal power plants by FY 2025‑26 under revised policy guidelines.",
-    "link": "https://energynews.pro/en/india-biomass-gains-momentum-in-energy-production/",
-    "tag": "Policy"
-  },
-  {
-    "title": "India's Biomass Demand Outpaces Supply by Over 90%",
-    "date": "June 30, 2025",
-    "summary": "Daily demand for biomass in India is around 100,000 tonnes, while supply barely reaches 7,000 tonnes—highlighting a severe gap.",
-    "link": "https://www.energetica-india.net/news/indias-biomass-push-sees-soaring-demand-but-supply-lags-at-7000-tonnes",
-    "tag": "Market"
-  },
-  {
-    "title": "MNRE Revises Financial Assistance for Pellet Units",
-    "date": "June 27, 2025",
-    "summary": "MNRE has updated the central financial assistance rates for biomass pellet manufacturing under the National Bio‑Energy Programme.",
-    "link": "https://mnre.gov.in/en/notice/revision-of-rate-of-central-financial-assistance-cfa-for-biomass-pellet-manufacturing-units-under-biomass-programme-component-of-national-bioenergy-programmenbp-reg/",
-    "tag": "Policy"
-  },
-  {
-    "title": "India Wood Pellet Market Valued at USD 457.6M in 2024",
-    "date": "July 7, 2025",
-    "summary": "According to IMARC Group, India's wood pellet market reached USD 457.6 million in 2024 and is projected to grow steadily.",
-    "link": "https://www.openpr.com/news/4093630/india-wood-pellet-market-outlook-2025-size-industry-share",
-    "tag": "Industry"
-  },
-  {
-    "title": "Global Biomass Pellets Market to Hit USD 14.9B in 2025",
-    "date": "June 30, 2025",
-    "summary": "A new report forecasts the global biomass pellets market will reach USD 14.9 billion in 2025, with over 10 % CAGR through 2033.",
-    "link": "https://www.globalgrowthinsights.com/market-reports/biomass-pellets-market-110208",
-    "tag": "Industry"
-  }
-]
+  })
+  .catch(error => {
+    console.error('Failed to load news:', error);
+    document.getElementById('news-container').innerHTML = `
+      <div style="padding:2rem; color:#bc4749; font-weight:bold;">
+        ⚠️ Failed to load news. Please check your connection or JSON format.
+      </div>`;
+  });
