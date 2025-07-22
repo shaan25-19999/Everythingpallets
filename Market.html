@@ -1,1 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Market Prices – EverythingPallets</title>
+  <link rel="stylesheet" href="style/market.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { animation: fadeIn 1s ease-in; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body>
 
+  <!-- ✅ HEADER WITH LOGO AND TITLE -->
+  <header class="sticky-header">
+    <div class="market-logo-container">
+      <img src="assets/Logo.png" alt="EverythingPallets Logo" class="market-logo" />
+    </div>
+    <h1>Market Prices</h1>
+    <p>Live Pellet & Briquette Price Intelligence by Location</p>
+  </header>
+
+  <!-- ✅ NAVIGATION -->
+  <nav class="sticky-nav">
+    <a href="index.html">Home</a>
+    <a href="market.html">Market Prices</a>
+    <a href="news.html">News</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+
+  <!-- ✅ MAIN CONTENT -->
+  <main>
+    <section class="section">
+      <label for="locationSelect"><strong>Select Location:</strong></label>
+      <select id="locationSelect" class="styled-dropdown"></select>
+    </section>
+
+    <hr/>
+
+    <section class="section">
+      <h3>Pellet Prices (₹/ton)</h3>
+      <table id="materialTable" class="hover-table"></table>
+    </section>
+
+    <hr/>
+
+    <section class="section">
+      <h3>Briquette Prices (₹/ton)</h3>
+      <table id="briquetteTable" class="hover-table"></table>
+    </section>
+
+    <hr/>
+
+    <section class="section graph-box">
+      <label for="materialSelect"><strong>Select Pellet Type for Price Trend:</strong></label>
+      <select id="materialSelect" class="styled-dropdown"></select>
+      <h3 id="chartTitle">Pellet Price Trend</h3>
+      <canvas id="priceChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: 17/7/25 <span id="pelletTimestamp">--</span></p>
+    </section>
+
+    <hr/>
+
+    <section class="section graph-box">
+      <label for="briquetteSelect"><strong>Select Briquette Type for Price Trend:</strong></label>
+      <select id="briquetteSelect" class="styled-dropdown"></select>
+      <h3 id="briquetteChartTitle">Briquette Price Trend</h3>
+      <canvas id="briquetteChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: 17/7/25 <span id="briquetteTimestamp">--</span></p>
+    </section>
+  </main>
+
+  <!-- ✅ FOOTER -->
+  <footer class="footer">
+    <p>&copy; 2025 EverythingPallets. Made with sustainability in mind.</p>
+  </footer>
+
+  <!-- ✅ SCRIPT -->
+  <script src="js/market.js"></script>
+</body>
+</html>
