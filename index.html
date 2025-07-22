@@ -1,1 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EverythingPallets</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style/home.css">
+</head>
+<body>
 
+  <!-- ✅ HEADER WITH LOGO AND TITLE -->
+  <header class="site-header">
+    <div class="logo-header">
+      <img src="assets/Logo.png" alt="EverythingPallets Logo" class="site-logo" />
+      <h1 class="home-title">HOME</h1>
+      <p class="site-tagline">For your every biomass and green energy need</p>
+    </div>
+  </header>
+
+  <!-- ✅ NAVIGATION -->
+  <nav>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="market.html">Market Prices</a>
+      <a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
+
+  <!-- ✅ MAIN CONTENT -->
+  <main>
+    <h2>Live Market Price Update for India</h2>
+
+    <div>
+      <label for="locationSelect"><strong>Select Location:</strong></label><br/>
+      <select id="locationSelect" onchange="updateData()">
+        <option value="average">Average</option>
+        <option value="ncr">NCR</option>
+        <option value="punjab">Punjab</option>
+        <option value="haryana">Haryana</option>
+        <option value="rajasthan">Rajasthan</option>
+      </select>
+    </div>
+
+    <div class="price-section">
+      <div class="price-box">
+        <strong>Pellet Price:</strong><br/>
+        ₹<span id="pelletPrice">7500</span>/ton
+      </div>
+      <div class="price-box">
+        <strong>Briquette Price:</strong><br/>
+        ₹<span id="briquettePrice">6200</span>/ton
+      </div>
+    </div>
+
+    <div class="graph-container">
+      <div class="chart-box">
+        <canvas id="pelletChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <canvas id="briquetteChart"></canvas>
+      </div>
+    </div>
+
+    <div class="cta">
+      <h3>Contact us for fair market rates and quality supply support</h3>
+      <button onclick="alert('Callback requested')">Request Callback</button>
+    </div>
+  </main>
+
+  <!-- ✅ FOOTER -->
+  <footer>
+    <p>&copy; 2025 EverythingPallets. All rights reserved.</p>
+  </footer>
+
+  <!-- ✅ SCRIPT -->
+  <script src="js/home.js"></script>
+
+</body>
+</html>
