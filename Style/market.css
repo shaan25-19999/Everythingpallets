@@ -185,25 +185,25 @@ footer {
 /* MARKET LOGO */
 .market-logo-container {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.8rem;
 }
 
 .market-logo {
-  max-width: 160px;
+  max-width: 120px;   /* 🔽 reduced from 160px */
   height: auto;
   display: block;
-  margin: 0 auto 1rem auto;
+  margin: 0 auto 0.8rem auto;
 }
 
 .market-heading {
-  font-size: 1.8rem;
+  font-size: 1.6rem;   /* 🔽 slightly reduced */
   font-weight: 700;
   color: #1C3D5A;
   margin: 0;
 }
 
 .market-subheading {
-  font-size: 1.05rem;
+  font-size: 1rem;     /* 🔽 slightly smaller */
   font-weight: 400;
   color: #66A5AD;
   margin-top: 0.3rem;
