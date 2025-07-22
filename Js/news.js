@@ -1,5 +1,10 @@
-fetch('news.json')
-  .then(response => response.json())
+fetch('data/News.json')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
   .then(newsItems => {
     const container = document.getElementById('news-container');
 
@@ -10,7 +15,6 @@ fetch('news.json')
       // Optional tag class for future color-coding (e.g. tag.Policy)
       const tagClass = item.tag ? `tag ${item.tag.replace(/\s+/g, '')}` : 'tag';
 
-      // Create inner card structure
       card.innerHTML = `
         <div class="${tagClass}">${item.tag}</div>
         <h2>${item.title}</h2>
