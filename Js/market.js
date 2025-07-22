@@ -1,5 +1,5 @@
 const loadData = async () => {
-  const res = await fetch("market-data.json");
+  const res = await fetch("data/Market-price.json");data.json");
   return await res.json();
 };
 
