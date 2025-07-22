@@ -1,4 +1,29 @@
 [
+  document.addEventListener("DOMContentLoaded", async () => {
+  const container = document.getElementById("news-container");
+
+  try {
+    const res = await fetch("data/News.json"); // ✅ Correct path to your news file
+    const newsData = await res.json();
+
+    newsData.forEach(article => {
+      const card = document.createElement("div");
+      card.className = "news-card";
+
+      card.innerHTML = `
+        <h2 class="news-title">${article.title}</h2>
+        <p class="news-meta"><span class="news-tag">${article.tag}</span> · ${article.date}</p>
+        <p class="news-summary">${article.summary}</p>
+        <a class="news-link" href="${article.link}" target="_blank">Read more →</a>
+      `;
+
+      container.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Error loading news:", error);
+    container.innerHTML = "<p>Unable to load news at the moment. Please try again later.</p>";
+  }
+});
   {
     "title": "India Sets 7% Biomass Pellets Blend Target by 2025‑26",
     "date": "July 18, 2025",
