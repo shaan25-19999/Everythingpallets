@@ -190,11 +190,10 @@ footer {
   gap: 0.5rem;
 }
 .logo-header img {
-  width: 140px;
-  max-width: 80%;
+  max-width: 160px;
   height: auto;
-  object-fit: contain;
-  margin-bottom: 0.3rem;
+  display: block;
+  margin: 0 auto 1rem auto;
 }
 .logo-header p:first-of-type {
   font-size: 1.75rem;
