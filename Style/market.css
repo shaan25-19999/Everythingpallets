@@ -208,20 +208,3 @@ footer {
   color: #66A5AD;
   margin-top: 0.3rem;
 }
-/* ASH, MOISTURE, KCAL INFO DISPLAY */
-.specs {
-  display: flex;
-  justify-content: flex-start;
-  gap: 2rem;
-  margin: 0.75rem 0 0.25rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #1C3D5A;
-}
-.specs p {
-  margin: 0;
-  background: #F0F9F9;
-  padding: 6px 12px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
