@@ -11,7 +11,7 @@ const loadData = async () => {
     const location = row.State?.trim();
     const material = row.Material?.trim();
     const type = row.Type?.trim();
-    const price = parseInt(row.Price?.replace(/,/g, ''));
+    const price = parseInt(row.week?.replace(/,/g, ''));
     const trend = [
       parseInt(row.Year), 
       parseInt(row["6 Month"]), 
