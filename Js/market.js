@@ -1,23 +1,23 @@
-// ✅ Fetch CSV from GitHub and parse it
-const fetchCSV = async () => {
-  const res = await fetch("https://raw.githubusercontent.com/shaan25-19999/Everythingpallets/main/Assets/Marketprice%20sheet%20.csv");
-  const text = await res.text();
-  return parseCSV(text);
-};
-
-// ✅ Convert CSV to structured data
-function parseCSV(data) {
-  const rows = data.trim().split('\n').map(row => row.split(','));
-  const headers = rows[0].map(h => h.trim());
-  const content = rows.slice(1);
+// ✅ Fetch live JSON from Google Sheets (via Sheet.best)
+const loadData = async () => {
+  const res = await fetch("https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68fcb04bf");
+  const sheetData = await res.json();
 
   const structured = {};
+  const pelletLabels = new Set();
+  const briquetteLabels = new Set();
 
-  for (const row of content) {
-    const [
-      location, material, type, price,
-      week, month, sixMonth, year
-    ] = row.map(cell => cell.trim());
+  for (const row of sheetData) {
+    const location = row.State?.trim();
+    const material = row.Material?.trim();
+    const type = row.Type?.trim();
+    const price = parseInt(row.Price?.replace(/,/g, ''));
+    const trend = [
+      parseInt(row.Year), 
+      parseInt(row["6 Month"]), 
+      parseInt(row.Month), 
+      parseInt(row.Week)
+    ];
 
     if (!structured[location]) {
       structured[location] = {
@@ -25,42 +25,30 @@ function parseCSV(data) {
       };
     }
 
-    const trend = [parseInt(year), parseInt(sixMonth), parseInt(month), parseInt(week)];
-    const formatted = {
-      price: parseInt(price),
-      trend: trend
-    };
+    const formatted = { price, trend };
 
     if (type.toLowerCase() === "pellet") {
       structured[location].materials.pellets[material] = formatted;
+      pelletLabels.add(material);
     } else {
       structured[location].materials.briquettes[material] = formatted;
+      briquetteLabels.add(material);
     }
   }
 
-  return structured;
-}
+  return { structured, pelletLabels, briquetteLabels };
+};
 document.addEventListener("DOMContentLoaded", async () => {
   const locationSelect = document.getElementById("locationSelect");
   const materialSelect = document.getElementById("materialSelect");
   const briquetteSelect = document.getElementById("briquetteSelect");
   const materialTable = document.getElementById("materialTable");
   const briquetteTable = document.getElementById("briquetteTable");
-  const chartTitle = document.getElementById("chartTitle");
-  const briquetteChartTitle = document.getElementById("briquetteChartTitle");
   const ctx = document.getElementById("priceChart").getContext("2d");
   const briquetteCtx = document.getElementById("briquetteChart").getContext("2d");
 
-  const dataset = await fetchCSV();
+  const { structured: dataset, pelletLabels, briquetteLabels } = await loadData();
   const locations = Object.keys(dataset);
-  const pelletLabels = new Set();
-  const briquetteLabels = new Set();
-
-  // Extract material names
-  locations.forEach(loc => {
-    Object.keys(dataset[loc].materials.pellets).forEach(m => pelletLabels.add(m));
-    Object.keys(dataset[loc].materials.briquettes).forEach(b => briquetteLabels.add(b));
-  });
 
   // Populate dropdowns
   locations.forEach(loc => {
@@ -83,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     opt.textContent = mat;
     briquetteSelect.appendChild(opt);
   });
-    // ✅ Chart.js: Pellet Chart
+
   const chart = new Chart(ctx, {
     type: 'line',
     data: { labels: ['Year', '6 Months', 'Month', 'Week'], datasets: [{ label: '', data: [] }] },
@@ -92,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       plugins: {
         tooltip: {
           callbacks: {
-            label: (ctx) => `₹${ctx.parsed.y.toLocaleString()}`
+            label: ctx => `₹${ctx.parsed.y.toLocaleString()}`
           }
         }
       },
@@ -106,7 +94,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ✅ Chart.js: Briquette Chart
   const briquetteChart = new Chart(briquetteCtx, {
     type: 'line',
     data: { labels: ['Year', '6 Months', 'Month', 'Week'], datasets: [{ label: '', data: [] }] },
@@ -115,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       plugins: {
         tooltip: {
           callbacks: {
-            label: (ctx) => `₹${ctx.parsed.y.toLocaleString()}`
+            label: ctx => `₹${ctx.parsed.y.toLocaleString()}`
           }
         }
       },
@@ -133,7 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = dataset[locationKey].materials.pellets;
     materialTable.innerHTML = `<tr><th>Pellet Type</th><th>Price (₹/ton)</th><th>Last 4 Trend</th></tr>` +
       Object.entries(data).map(([type, { price, trend }]) => {
-        const trendHTML = trend.map(val => `<span style="display:inline-block;width:5px;height:${10 + val / 100}px;background:#52b788;margin:0 1px;"></span>`).join('');
+        const trendHTML = trend.map(val =>
+          `<span style="display:inline-block;width:5px;height:${10 + val / 100}px;background:#52b788;margin:0 1px;"></span>`).join('');
         return `<tr><td>${type}</td><td><strong>₹${price.toLocaleString()}</strong></td><td>${trendHTML}</td></tr>`;
       }).join('');
   }
@@ -142,7 +130,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = dataset[locationKey].materials.briquettes;
     briquetteTable.innerHTML = `<tr><th>Briquette Type</th><th>Price (₹/ton)</th><th>Last 4 Trend</th></tr>` +
       Object.entries(data).map(([type, { price, trend }]) => {
-        const trendHTML = trend.map(val => `<span style="display:inline-block;width:5px;height:${10 + val / 100}px;background:#6a4f2d;margin:0 1px;"></span>`).join('');
+        const trendHTML = trend.map(val =>
+          `<span style="display:inline-block;width:5px;height:${10 + val / 100}px;background:#6a4f2d;margin:0 1px;"></span>`).join('');
         return `<tr><td>${type}</td><td><strong>₹${price.toLocaleString()}</strong></td><td>${trendHTML}</td></tr>`;
       }).join('');
   }
@@ -155,7 +144,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     chartObj.update();
   }
 
-  // ✅ Event listeners
   function refreshAll() {
     const loc = locationSelect.value;
     renderTable(loc);
@@ -168,7 +156,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   materialSelect.addEventListener("change", () => updateChart(locationSelect.value, materialSelect.value, chart, true));
   briquetteSelect.addEventListener("change", () => updateChart(locationSelect.value, briquetteSelect.value, briquetteChart, false));
 
-  // ✅ Set defaults and render
   locationSelect.value = locations[0];
   materialSelect.value = [...pelletLabels][0];
   briquetteSelect.value = [...briquetteLabels][0];
