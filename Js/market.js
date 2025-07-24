@@ -1,7 +1,9 @@
 // ✅ Fetch live JSON from Google Sheets (via Sheet.best)
+let sheetData = [];
+
 const loadData = async () => {
   const res = await fetch("https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68fcb04bf");
-  const sheetData = await res.json();
+  sheetData = await res.json();
 
   const structured = {};
   const pelletLabels = new Set();
@@ -38,6 +40,7 @@ const loadData = async () => {
 
   return { structured, pelletLabels, briquetteLabels };
 };
+
 document.addEventListener("DOMContentLoaded", async () => {
   const locationSelect = document.getElementById("locationSelect");
   const materialSelect = document.getElementById("materialSelect");
@@ -50,7 +53,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { structured: dataset, pelletLabels, briquetteLabels } = await loadData();
   const locations = Object.keys(dataset);
 
-  // Populate dropdowns
   locations.forEach(loc => {
     const opt = document.createElement("option");
     opt.value = loc;
@@ -142,6 +144,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     chartObj.data.datasets[0].label = type;
     chartObj.data.datasets[0].data = trend;
     chartObj.update();
+
+    updateSpecs(type, isPellet);
+  }
+
+  function updateSpecs(material, isPellet = true) {
+    const specContainerId = isPellet ? "pelletSpecs" : "briquetteSpecs";
+    const timestampId = isPellet ? "pelletTimestamp" : "briquetteTimestamp";
+
+    const globalInfo = sheetData.find(row =>
+      row.State?.toLowerCase() === "global" &&
+      row.Material?.trim() === material &&
+      row.Type?.toLowerCase() === (isPellet ? "pellet" : "briquettes")
+    );
+
+    if (globalInfo) {
+      const container = document.getElementById(specContainerId);
+      container.innerHTML = `
+        <p><strong>Ash:</strong> ${globalInfo.Ash || '--'}</p>
+        <p><strong>Moisture:</strong> ${globalInfo.Moisture || '--'}</p>
+        <p><strong>Kcal Value:</strong> ${globalInfo.Kcal || '--'}</p>
+      `;
+    }
+
+    const lastRow = sheetData.find(r => r["Last updated"]);
+    if (lastRow) {
+      document.getElementById(timestampId).textContent = lastRow["Last updated"];
+    }
   }
 
   function refreshAll() {
@@ -159,47 +188,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   locationSelect.value = locations[0];
   materialSelect.value = [...pelletLabels][0];
   briquetteSelect.value = [...briquetteLabels][0];
+
   refreshAll();
 });
-// 🔁 Inject Ash / Moisture / Kcal + Last Updated Info
-function updateSpecs(material, isPellet = true) {
-  const specContainerId = isPellet ? "pelletSpecs" : "briquetteSpecs";
-  const timestampId = isPellet ? "pelletTimestamp" : "briquetteTimestamp";
-
-  const globalInfo = sheetData.find(row =>
-    row.Type === (isPellet ? "Pellet" : "Briquette") &&
-    row.State === "global" &&
-    row.Material === material
-  );
-
-  if (globalInfo) {
-    const container = document.getElementById(specContainerId);
-    container.innerHTML = `
-      <div class="specs">
-        <p>Ash: ${globalInfo.Ash || '--'}%</p>
-        <p>Moisture: ${globalInfo.Moisture || '--'}%</p>
-        <p>Kcal: ${globalInfo.Kcal || '--'} kcal</p>
-      </div>
-    `;
-  }
-
-  // Last Updated global row
-  const lastRow = sheetData.find(r => r.Material === "global" && r.Type === "global");
-  if (lastRow && lastRow["Last Updated"]) {
-    document.getElementById(timestampId).textContent = lastRow["Last Updated"];
-  }
-}
-
-// 🧠 Hook into material change to update specs as well
-materialSelect.addEventListener("change", () => {
-  updateChart(locationSelect.value, materialSelect.value, chart, true);
-  updateSpecs(materialSelect.value, true);
-});
-briquetteSelect.addEventListener("change", () => {
-  updateChart(locationSelect.value, briquetteSelect.value, briquetteChart, false);
-  updateSpecs(briquetteSelect.value, false);
-});
-
-// 📦 First Load
-updateSpecs(materialSelect.value, true);
-updateSpecs(briquetteSelect.value, false);
