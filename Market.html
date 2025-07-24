@@ -15,6 +15,17 @@
     html {
       scroll-behavior: smooth;
     }
+    .specs {
+      display: flex;
+      gap: 2rem;
+      margin: 0.75rem 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #333;
+    }
+    .specs p {
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -59,22 +70,38 @@
 
     <hr/>
 
+    <!-- ✅ Pellet Graph Section -->
     <section class="section graph-box">
       <label for="materialSelect"><strong>Select Pellet Type for Price Trend:</strong></label>
       <select id="materialSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="pelletSpecs">
+        <p><strong>Ash:</strong> <span id="pelletAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="pelletMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="pelletKcal">--</span></p>
+      </div>
+
       <h3 id="chartTitle">Pellet Price Trend</h3>
       <canvas id="priceChart" width="400" height="200"></canvas>
-      <p class="timestamp">Last updated: 17/7/25 <span id="pelletTimestamp">--</span></p>
+      <p class="timestamp">Last updated: <span id="pelletTimestamp">--</span></p>
     </section>
 
     <hr/>
 
+    <!-- ✅ Briquette Graph Section -->
     <section class="section graph-box">
       <label for="briquetteSelect"><strong>Select Briquette Type for Price Trend:</strong></label>
       <select id="briquetteSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="briquetteSpecs">
+        <p><strong>Ash:</strong> <span id="briquetteAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="briquetteMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="briquetteKcal">--</span></p>
+      </div>
+
       <h3 id="briquetteChartTitle">Briquette Price Trend</h3>
       <canvas id="briquetteChart" width="400" height="200"></canvas>
-      <p class="timestamp">Last updated: 17/7/25 <span id="briquetteTimestamp">--</span></p>
+      <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span></p>
     </section>
   </main>
 
