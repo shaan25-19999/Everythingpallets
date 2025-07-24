@@ -149,23 +149,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateSpecs(material, isPellet = true) {
-    const specContainerId = isPellet ? "pelletSpecs" : "briquetteSpecs";
-    const timestampId = isPellet ? "pelletTimestamp" : "briquetteTimestamp";
+  const specContainerId = isPellet ? "pelletSpecs" : "briquetteSpecs";
+  const timestampId = isPellet ? "pelletTimestamp" : "briquetteTimestamp";
 
-    const globalInfo = sheetData.find(row =>
-      row.State?.trim().toLowerCase() === "global" &&
-      row.Material?.trim() === material &&
-      row.Type?.trim().toLowerCase().includes(isPellet ? "pellet" : "briquette")
-    );
+  const globalInfo = sheetData.find(row =>
+    row.State?.trim().toLowerCase() === "global" &&
+    row.Material?.trim() === material &&
+    row.Type?.trim().toLowerCase().includes(isPellet ? "pellet" : "briquette")
+  );
 
-    if (globalInfo) {
-      const container = document.getElementById(specContainerId);
-      container.innerHTML = `
-        <p><strong>Ash:</strong> ${globalInfo.Ash || '--'}%</p>
-        <p><strong>Moisture:</strong> ${globalInfo.Moisture || '--'}</p>
-        <p><strong>Kcal Value:</strong> ${globalInfo.Kcal || '--'}</p>
-      `;
-    }
+  if (globalInfo) {
+    const ash = globalInfo.Ash?.toString().includes('%') ? globalInfo.Ash : `${globalInfo.Ash || '--'}%`;
+    const moisture = globalInfo.Moisture?.toString().includes('%') ? globalInfo.Moisture : `${globalInfo.Moisture || '--'}%`;
+    const kcal = globalInfo.Kcal || '--';
+
+    const container = document.getElementById(specContainerId);
+    container.innerHTML = `
+      <p><strong>Ash:</strong> ${ash}</p>
+      <p><strong>Moisture:</strong> ${moisture}</p>
+      <p><strong>Kcal Value:</strong> ${kcal}</p>
+    `;
+  }
+
+  const lastRow = sheetData.find(row => row["Last Updated"]);
+  if (lastRow) {
+    document.getElementById(timestampId).textContent = lastRow["Last Updated"];
+  }
+}
 
     const lastRow = sheetData.find(row => row["Last Updated"]);
     if (lastRow) {
