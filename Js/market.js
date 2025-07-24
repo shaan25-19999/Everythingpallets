@@ -161,3 +161,45 @@ document.addEventListener("DOMContentLoaded", async () => {
   briquetteSelect.value = [...briquetteLabels][0];
   refreshAll();
 });
+// 🔁 Inject Ash / Moisture / Kcal + Last Updated Info
+function updateSpecs(material, isPellet = true) {
+  const specContainerId = isPellet ? "pelletSpecs" : "briquetteSpecs";
+  const timestampId = isPellet ? "pelletTimestamp" : "briquetteTimestamp";
+
+  const globalInfo = sheetData.find(row =>
+    row.Type === (isPellet ? "Pellet" : "Briquette") &&
+    row.State === "global" &&
+    row.Material === material
+  );
+
+  if (globalInfo) {
+    const container = document.getElementById(specContainerId);
+    container.innerHTML = `
+      <div class="specs">
+        <p>Ash: ${globalInfo.Ash || '--'}%</p>
+        <p>Moisture: ${globalInfo.Moisture || '--'}%</p>
+        <p>Kcal: ${globalInfo.Kcal || '--'} kcal</p>
+      </div>
+    `;
+  }
+
+  // Last Updated global row
+  const lastRow = sheetData.find(r => r.Material === "global" && r.Type === "global");
+  if (lastRow && lastRow["Last Updated"]) {
+    document.getElementById(timestampId).textContent = lastRow["Last Updated"];
+  }
+}
+
+// 🧠 Hook into material change to update specs as well
+materialSelect.addEventListener("change", () => {
+  updateChart(locationSelect.value, materialSelect.value, chart, true);
+  updateSpecs(materialSelect.value, true);
+});
+briquetteSelect.addEventListener("change", () => {
+  updateChart(locationSelect.value, briquetteSelect.value, briquetteChart, false);
+  updateSpecs(briquetteSelect.value, false);
+});
+
+// 📦 First Load
+updateSpecs(materialSelect.value, true);
+updateSpecs(briquetteSelect.value, false);
