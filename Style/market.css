@@ -118,6 +118,8 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: left;
+  width: 100%;
+  text-align-last: left;
 }
 select:focus {
   border-color: #D4AF37;
