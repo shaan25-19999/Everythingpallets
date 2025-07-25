@@ -51,6 +51,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const briquetteCtx = document.getElementById("briquetteChart").getContext("2d");
 
   const { structured: dataset, pelletLabels, briquetteLabels } = await loadData();
+   pelletLabels.delete("GLOBAL");
+   briquetteLabels.delete("GLOBAL");
   const locations = Object.keys(dataset).filter(loc => loc.toUpperCase() !== "GLOBAL");
 
   locations.forEach(loc => {
