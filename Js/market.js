@@ -161,7 +161,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (globalInfo) {
       const container = document.getElementById(specContainerId);
       container.innerHTML = `
-        <p><strong>Ash:</strong> ${globalInfo.Ash || '--'}%</p>
+     
+           <p><strong>Ash:</strong> ${globalInfo.Ash || '--'}%</p>
        <p><strong>Moisture:</strong> ${globalInfo.Moisture || '--'}%</p>
         <p><strong>Kcal Value:</strong> ${globalInfo.Kcal || '--'}</p>
       `;
