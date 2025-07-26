@@ -1,23 +1,27 @@
 const API_URL = "https://api.sheetbest.com/sheets/f69b60fd-3167-4e76-a920-4cb278f05cc7";
+
 let sheetData = [];
+
+function formatNumber(num) {
+  if (!num || isNaN(num)) return "--";
+  return Number(num).toLocaleString("en-IN");
+}
 
 async function fetchData() {
   try {
     const response = await fetch(API_URL);
     sheetData = await response.json();
-    updateData(); // Initial load
+    updateData();
   } catch (error) {
-    console.error("⚠️ Error fetching SheetBest data:", error);
-    document.getElementById("pelletPrice").textContent = "--";
-    document.getElementById("briquettePrice").textContent = "--";
+    console.error("Error fetching data:", error);
   }
 }
 
 function updateData() {
-  const location = document.getElementById("locationSelect").value.trim().toLowerCase();
+  const location = document.getElementById("locationSelect").value.trim();
 
   const matchedRow = sheetData.find(row =>
-    row.State?.trim().toLowerCase() === location
+    row.State?.trim() === location
   );
 
   const pelletElement = document.getElementById("pelletPrice");
@@ -32,9 +36,5 @@ function updateData() {
   }
 }
 
-function formatNumber(value) {
-  const num = parseInt(value?.toString().replace(/,/g, ""));
-  return isNaN(num) ? "--" : num.toLocaleString("en-IN");
-}
-
-document.addEventListener("DOMContentLoaded", fetchData);
+// Initial load
+fetchData();
