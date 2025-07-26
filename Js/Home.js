@@ -18,23 +18,30 @@ async function fetchData() {
 }
 
 function updateData() {
-  const location = document.getElementById("locationSelect").value.trim();
-
-  const matchedRow = sheetData.find(row =>
-    row.State?.trim() === location
-  );
+  const location = document.getElementById("locationSelect").value.trim().toLowerCase();
 
   const pelletElement = document.getElementById("pelletPrice");
   const briquetteElement = document.getElementById("briquettePrice");
 
-  if (matchedRow) {
-    pelletElement.textContent = formatNumber(matchedRow["Pellet Price"]);
-    briquetteElement.textContent = formatNumber(matchedRow["Briquette Price"]);
-  } else {
-    pelletElement.textContent = "--";
-    briquetteElement.textContent = "--";
-  }
+  let pelletPrice = "--";
+  let briquettePrice = "--";
+
+  sheetData.forEach(row => {
+    if (row.State && row.Type && row.Price) {
+      const stateMatch = row.State.trim().toLowerCase() === location;
+      const type = row.Type.trim().toLowerCase();
+
+      if (stateMatch && type === "pellet") {
+        pelletPrice = formatNumber(row.Price);
+      } else if (stateMatch && type === "briquette") {
+        briquettePrice = formatNumber(row.Price);
+      }
+    }
+  });
+
+  pelletElement.textContent = pelletPrice;
+  briquetteElement.textContent = briquettePrice;
 }
 
-// Initial load
+// Initial fetch on load
 fetchData();
