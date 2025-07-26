@@ -1,75 +1,40 @@
-const prices = {
-      average: {
-        pellet: 7500,
-        briquette: 6200,
-        pelletTrend: [7300, 7400, 7500, 7550],
-        briquetteTrend: [6000, 6100, 6200, 6250]
-      },
-      ncr: {
-        pellet: 7700,
-        briquette: 6300,
-        pelletTrend: [7500, 7600, 7700, 7750],
-        briquetteTrend: [6100, 6200, 6300, 6350]
-      },
-      punjab: {
-        pellet: 7600,
-        briquette: 6250,
-        pelletTrend: [7400, 7500, 7600, 7650],
-        briquetteTrend: [6050, 6150, 6250, 6300]
-      },
-      haryana: {
-        pellet: 7400,
-        briquette: 6100,
-        pelletTrend: [7200, 7300, 7400, 7450],
-        briquetteTrend: [5900, 6000, 6100, 6150]
-      },
-      rajasthan: {
-        pellet: 7550,
-        briquette: 6150,
-        pelletTrend: [7350, 7450, 7550, 7600],
-        briquetteTrend: [5950, 6050, 6150, 6200]
-      }
-    };
+const API_URL = "https://api.sheetbest.com/sheets/f69b60fd-3167-4e76-a920-4cb278f05cc7";
+let sheetData = [];
 
-    const pelletCtx = document.getElementById('pelletChart').getContext('2d');
-    const briquetteCtx = document.getElementById('briquetteChart').getContext('2d');
+async function fetchData() {
+  try {
+    const response = await fetch(API_URL);
+    sheetData = await response.json();
+    updateData(); // Initial load
+  } catch (error) {
+    console.error("⚠️ Error fetching SheetBest data:", error);
+    document.getElementById("pelletPrice").textContent = "--";
+    document.getElementById("briquettePrice").textContent = "--";
+  }
+}
 
-    let pelletChart = new Chart(pelletCtx, {
-      type: 'line',
-      data: {
-        labels: ['YEAR', '6 MONTHS', 'MONTH', 'WEEK'],
-        datasets: [{
-          label: 'Pellet Price (₹/ton)',
-          data: prices.average.pelletTrend,
-          borderColor: 'green',
-          fill: false
-        }]
-      }
-    });
+function updateData() {
+  const location = document.getElementById("locationSelect").value.trim().toLowerCase();
 
-    let briquetteChart = new Chart(briquetteCtx, {
-      type: 'line',
-      data: {
-        labels: ['YEAR', '6 MONTHS', 'MONTH', 'WEEK'],
-        datasets: [{
-          label: 'Briquette Price (₹/ton)',
-          data: prices.average.briquetteTrend,
-          borderColor: 'orange',
-          fill: false
-        }]
-      }
-    });
+  const matchedRow = sheetData.find(row =>
+    row.State?.trim().toLowerCase() === location
+  );
 
-    function updateData() {
-      const location = document.getElementById('locationSelect').value;
-      const data = prices[location];
+  const pelletElement = document.getElementById("pelletPrice");
+  const briquetteElement = document.getElementById("briquettePrice");
 
-      document.getElementById('pelletPrice').textContent = data.pellet;
-      document.getElementById('briquettePrice').textContent = data.briquette;
+  if (matchedRow) {
+    pelletElement.textContent = formatNumber(matchedRow["Pellet Price"]);
+    briquetteElement.textContent = formatNumber(matchedRow["Briquette Price"]);
+  } else {
+    pelletElement.textContent = "--";
+    briquetteElement.textContent = "--";
+  }
+}
 
-      pelletChart.data.datasets[0].data = data.pelletTrend;
-      briquetteChart.data.datasets[0].data = data.briquetteTrend;
+function formatNumber(value) {
+  const num = parseInt(value?.toString().replace(/,/g, ""));
+  return isNaN(num) ? "--" : num.toLocaleString("en-IN");
+}
 
-      pelletChart.update();
-      briquetteChart.update();
-    }
+document.addEventListener("DOMContentLoaded", fetchData);
