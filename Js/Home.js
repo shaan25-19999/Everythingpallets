@@ -11,7 +11,7 @@ async function fetchData() {
   try {
     const response = await fetch(API_URL);
     sheetData = await response.json();
-    updateData();
+    updateData(); // Initial update after data is fetched
   } catch (error) {
     console.error("Error fetching data:", error);
   }
@@ -20,28 +20,25 @@ async function fetchData() {
 function updateData() {
   const location = document.getElementById("locationSelect").value.trim().toLowerCase();
 
-  const pelletElement = document.getElementById("pelletPrice");
-  const briquetteElement = document.getElementById("briquettePrice");
-
   let pelletPrice = "--";
   let briquettePrice = "--";
 
-  sheetData.forEach(row => {
-    if (row.State && row.Type && row.Price) {
-      const stateMatch = row.State.trim().toLowerCase() === location;
-      const type = row.Type.trim().toLowerCase();
+  for (let row of sheetData) {
+    if (!row.State || !row.Type || !row.Price) continue;
 
-      if (stateMatch && type === "pellet") {
-        pelletPrice = formatNumber(row.Price);
-      } else if (stateMatch && type === "briquette") {
-        briquettePrice = formatNumber(row.Price);
-      }
+    const stateMatch = row.State.trim().toLowerCase() === location;
+    const type = row.Type.trim().toLowerCase();
+
+    if (stateMatch && type === "pellet") {
+      pelletPrice = formatNumber(row.Price);
+    } else if (stateMatch && type === "briquette") {
+      briquettePrice = formatNumber(row.Price);
     }
-  });
+  }
 
-  pelletElement.textContent = pelletPrice;
-  briquetteElement.textContent = briquettePrice;
+  document.getElementById("pelletPrice").textContent = pelletPrice;
+  document.getElementById("briquettePrice").textContent = briquettePrice;
 }
 
-// Initial fetch on load
+// ✅ Trigger fetch on page load
 fetchData();
