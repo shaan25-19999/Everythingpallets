@@ -18,27 +18,26 @@ async function fetchData() {
 }
 
 function updateData() {
-  const location = document.getElementById("locationSelect").value.trim().toUpperCase();
+  const location = document.getElementById("locationSelect").value.trim().toLowerCase();
 
   let pelletPrice = "--";
   let briquettePrice = "--";
 
-  sheetData.forEach(row => {
-    const state = row.State?.trim().toUpperCase();
+  for (const row of sheetData) {
+    const state = row.State?.trim().toLowerCase();
     const type = row.Type?.trim().toLowerCase();
-    const price = row.Price?.replace(/,/g, '').trim();
+    const price = row.Price?.toString().replace(/,/g, '');
 
     if (state === location && type === "pellet") {
       pelletPrice = formatNumber(price);
-    }
-    if (state === location && type === "briquette") {
+    } else if (state === location && type === "briquette") {
       briquettePrice = formatNumber(price);
     }
-  });
+  }
 
   document.getElementById("pelletPrice").textContent = pelletPrice;
   document.getElementById("briquettePrice").textContent = briquettePrice;
 }
 
-// Load data initially
+// Initial fetch
 fetchData();
