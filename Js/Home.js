@@ -18,13 +18,13 @@ async function fetchData() {
 }
 
 function updateData() {
-  const location = document.getElementById("locationSelect").value.trim().toLowerCase();
+  const location = document.getElementById("locationSelect").value.trim().toUpperCase();
 
   let pelletPrice = "--";
   let briquettePrice = "--";
 
   sheetData.forEach(row => {
-    const state = row.State?.trim().toLowerCase();
+    const state = row.State?.trim().toUpperCase();
     const type = row.Type?.trim().toLowerCase();
     const price = row.Price?.replace(/,/g, '').trim();
 
