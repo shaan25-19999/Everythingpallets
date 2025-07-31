@@ -1,34 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Test Sheet Load</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EverythingPallets</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style/home.css">
 </head>
 <body>
-  <h3>Testing Dropdown</h3>
-  <select id="locationSelect"><option>Loading...</option></select>
 
-  <script>
-    const API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
+  <!-- ✅ HEADER WITH LOGO AND TITLE -->
+  <header class="site-header">
+    <div class="logo-header">
+      <img src="assets/Logo.png" alt="EverythingPallets Logo" class="site-logo" />
+      <h1 class="home-title">HOME</h1>
+      <p class="site-tagline">For your every biomass and green energy need</p>
+    </div>
+  </header>
 
-    async function testFetch() {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      console.log("Fetched data:", data);
+  <!-- ✅ NAVIGATION -->
+  <nav>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="market.html">Market Prices</a>
+      <a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+    </div>
+  </nav>
 
-      const dropdown = document.getElementById("locationSelect");
-      dropdown.innerHTML = "";
+  <!-- ✅ MAIN CONTENT -->
+  <main>
+    <h2>Live Market Price Update for India</h2>
 
-      const states = [...new Set(data.map(r => r.State?.trim()).filter(Boolean))];
-      states.forEach(state => {
-        const opt = document.createElement("option");
-        opt.value = state;
-        opt.textContent = state;
-        dropdown.appendChild(opt);
-      });
-    }
+    <div>
+      <label for="locationSelect"><strong>Select Location:</strong></label><br/>
+      <select id="locationSelect" onchange="updateData()">
+        <option disabled selected>Loading...</option>
+      </select>
+    </div>
 
-    testFetch();
-  </script>
+    <div class="price-section">
+      <div class="price-box">
+        <strong>Pellet Price:</strong><br/>
+        ₹<span id="pelletPrice">--</span>/ton
+      </div>
+      <div class="price-box">
+        <strong>Briquette Price:</strong><br/>
+        ₹<span id="briquettePrice">--</span>/ton
+      </div>
+    </div>
+
+    <div class="graph-container">
+      <div class="chart-box">
+        <canvas id="pelletChart"></canvas>
+      </div>
+      <div class="chart-box">
+        <canvas id="briquetteChart"></canvas>
+      </div>
+    </div>
+
+    <div class="cta">
+      <h3>Contact us for fair market rates and quality supply support</h3>
+      <button onclick="alert('Callback requested')">Request Callback</button>
+    </div>
+  </main>
+
+  <!-- ✅ FOOTER -->
+  <footer>
+    <p>&copy; 2025 EverythingPallets. All rights reserved.</p>
+  </footer>
+
+  <!-- ✅ CONNECTED SCRIPT -->
+  <script src="home.js"></script>
 </body>
 </html>
