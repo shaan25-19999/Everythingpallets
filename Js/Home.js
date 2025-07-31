@@ -21,15 +21,17 @@ function populateLocationDropdown() {
   const locationSelect = document.getElementById("locationSelect");
   const uniqueStates = [...new Set(sheetData.map(row => row.State?.trim()).filter(Boolean))];
 
-  // Clear existing
+  // Clear and populate
   locationSelect.innerHTML = "";
-
   uniqueStates.forEach(state => {
     const option = document.createElement("option");
     option.value = state;
     option.textContent = state;
     locationSelect.appendChild(option);
   });
+
+  // Add event listener **only after DOM exists and dropdown is filled**
+  locationSelect.addEventListener("change", updateData);
 }
 
 function updateData() {
@@ -54,7 +56,5 @@ function updateData() {
   document.getElementById("briquettePrice").textContent = briquettePrice;
 }
 
-document.getElementById("locationSelect").addEventListener("change", updateData);
-
-// Auto run
-fetchData();
+// ✅ Ensure everything runs after DOM is ready
+document.addEventListener("DOMContentLoaded", fetchData);
