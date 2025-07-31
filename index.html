@@ -29,44 +29,61 @@
   </nav>
 
   <!-- ✅ MAIN CONTENT -->
-  <main>
-    <h2>Live Market Price Update for India</h2>
+ <main>
+    <section class="section">
+      <label for="locationSelect"><strong>Select Location:</strong></label>
+      <select id="locationSelect" class="styled-dropdown"></select>
+    </section>
 
-    <div>
-      <label for="locationSelect"><strong>Select Location:</strong></label><br/>
-      <select id="locationSelect" onchange="updateData()">
-        <option value="Average">Average</option>
-        <option value="Haryana">Haryana</option>
-        <option value="Uttar Pradesh">Uttar Pradesh</option>
-        <option value="Punjab">Punjab</option>
-        <option value="Rajasthan">Rajasthan</option>
-      </select>
-    </div>
+    <hr/>
 
-    <div class="price-section">
-      <div class="price-box">
-        <strong>Pellet Price:</strong><br/>
-        ₹<span id="pelletPrice">--</span>/ton
-      </div>
-      <div class="price-box">
-        <strong>Briquette Price:</strong><br/>
-        ₹<span id="briquettePrice">--</span>/ton
-      </div>
-    </div>
+    <section class="section">
+      <h3>Pellet Prices (₹/ton)</h3>
+      <table id="materialTable" class="hover-table"></table>
+    </section>
 
-    <div class="graph-container">
-      <div class="chart-box">
-        <canvas id="pelletChart"></canvas>
-      </div>
-      <div class="chart-box">
-        <canvas id="briquetteChart"></canvas>
-      </div>
-    </div>
+    <hr/>
 
-    <div class="cta">
-      <h3>Contact us for fair market rates and quality supply support</h3>
-      <button onclick="alert('Callback requested')">Request Callback</button>
-    </div>
+    <section class="section">
+      <h3>Briquette Prices (₹/ton)</h3>
+      <table id="briquetteTable" class="hover-table"></table>
+    </section>
+
+    <hr/>
+
+    <!-- ✅ Pellet Graph Section -->
+    <section class="section graph-box">
+      <label for="materialSelect"><strong>Select Pellet Type for Price Trend:</strong></label>
+      <select id="materialSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="pelletSpecs">
+        <p><strong>Ash:</strong> <span id="pelletAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="pelletMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="pelletKcal">--</span></p>
+      </div>
+
+      <h3 id="chartTitle">Pellet Price Trend</h3>
+      <canvas id="priceChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: <span id="pelletTimestamp">--</span></p>
+    </section>
+
+    <hr/>
+
+    <!-- ✅ Briquette Graph Section -->
+    <section class="section graph-box">
+      <label for="briquetteSelect"><strong>Select Briquette Type for Price Trend:</strong></label>
+      <select id="briquetteSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="briquetteSpecs">
+        <p><strong>Ash:</strong> <span id="briquetteAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="briquetteMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="briquetteKcal">--</span></p>
+      </div>
+
+      <h3 id="briquetteChartTitle">Briquette Price Trend</h3>
+      <canvas id="briquetteChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span></p>
+    </section>
   </main>
 
   <!-- ✅ FOOTER -->
