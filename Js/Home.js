@@ -13,7 +13,7 @@ async function fetchData() {
     const response = await fetch(API_URL);
     sheetData = await response.json();
     populateLocationDropdown();
-    updateData(); // Default load
+    updateData(); // default load
   } catch (error) {
     console.error("❌ Error fetching data:", error);
   }
@@ -63,31 +63,28 @@ function updateData() {
   drawCharts(location);
 }
 
-function drawCharts(selectedLocation) {
-  // Extract time series values
-  const pelletTrend = sheetData.filter(row => row.Type?.toLowerCase() === "pellet" && row.State === selectedLocation)[0];
-  const briquetteTrend = sheetData.filter(row => row.Type?.toLowerCase() === "briquette" && row.State === selectedLocation)[0];
-
+function drawCharts(location) {
   const labels = ["Week", "Month", "6 Months", "Year"];
-  const pelletValues = [
-    parseInt(pelletTrend?.Week) || 0,
-    parseInt(pelletTrend?.Month) || 0,
-    parseInt(pelletTrend?.["6mo"]) || 0,
-    parseInt(pelletTrend?.Year) || 0
+
+  const pelletRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "pellet");
+  const briquetteRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "briquette");
+
+  const parseValues = row => [
+    parseInt(row?.Week || 0),
+    parseInt(row?.Month || 0),
+    parseInt(row?.["6 Months"] || 0),
+    parseInt(row?.Year || 0),
   ];
 
-  const briquetteValues = [
-    parseInt(briquetteTrend?.Week) || 0,
-    parseInt(briquetteTrend?.Month) || 0,
-    parseInt(briquetteTrend?.["6mo"]) || 0,
-    parseInt(briquetteTrend?.Year) || 0
-  ];
+  const pelletValues = parseValues(pelletRow);
+  const briquetteValues = parseValues(briquetteRow);
 
+  // Remove old charts
   if (pelletChartInstance) pelletChartInstance.destroy();
   if (briquetteChartInstance) briquetteChartInstance.destroy();
 
   const chartOptions = {
-    type: 'line',
+    type: "line",
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -99,7 +96,7 @@ function drawCharts(selectedLocation) {
         y: {
           beginAtZero: false,
           ticks: {
-            callback: (val) => `₹${val.toLocaleString("en-IN")}`
+            callback: value => `₹${value.toLocaleString("en-IN")}`
           }
         }
       },
@@ -118,12 +115,12 @@ function drawCharts(selectedLocation) {
   pelletChartInstance = new Chart(document.getElementById("pelletChart"), {
     ...chartOptions,
     data: {
-      labels: labels,
+      labels,
       datasets: [{
         label: "Pellet Price",
         data: pelletValues,
         borderColor: "#FFA500",
-        backgroundColor: "#FFA500"
+        backgroundColor: "#FFEFD5"
       }]
     }
   });
@@ -132,12 +129,12 @@ function drawCharts(selectedLocation) {
   briquetteChartInstance = new Chart(document.getElementById("briquetteChart"), {
     ...chartOptions,
     data: {
-      labels: labels,
+      labels,
       datasets: [{
         label: "Briquette Price",
         data: briquetteValues,
         borderColor: "#FFA500",
-        backgroundColor: "#FFA500"
+        backgroundColor: "#FFEFD5"
       }]
     }
   });
