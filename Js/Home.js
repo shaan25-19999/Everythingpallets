@@ -72,7 +72,7 @@ function drawCharts(location) {
   const parseValues = row => [
     parseInt(row?.Year || 0),
     parseInt(row?.6 Months || 0),
-    parseInt(row?.["Month"] || row?.["6mo"] || 0),
+    parseInt(row?.Month || 0),
     parseInt(row?.Week || 0)
   ];
 
