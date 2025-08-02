@@ -157,3 +157,37 @@ footer {
   font-size: 0.95rem;
   border-top: 1px solid #D3E3EC;
 }
+/* ✅ Polished Chart.js Styling & Graph Visibility Fix */
+
+/* Chart canvas tweaks to ensure visibility and responsiveness */
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Custom tooltip font and axis color matching site theme */
+.chartjs-render-monitor {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.chart-box canvas {
+  background: #F9F9F9;
+  border-radius: 6px;
+}
+
+/* Mobile stacking */
+@media (max-width: 768px) {
+  .graph-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chart-box {
+    width: 90%;
+  }
+
+  .price-section {
+    flex-direction: column;
+    align-items: center;
+  }
+}
