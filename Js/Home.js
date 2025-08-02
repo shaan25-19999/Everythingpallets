@@ -70,10 +70,10 @@ function drawCharts(location) {
   const briquetteRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "briquette");
 
   const parseValues = row => [
-    parseInt(row?.Week || 0),
-    parseInt(row?.Month || 0),
-    parseInt(row?.["6 Months"] || row?.["6mo"] || 0),
-    parseInt(row?.Year || 0)
+    parseInt(row?.Year || 0),
+    parseInt(row?.6 Months || 0),
+    parseInt(row?.["Month"] || row?.["6mo"] || 0),
+    parseInt(row?.Week || 0)
   ];
 
   const pelletValues = parseValues(pelletRow);
