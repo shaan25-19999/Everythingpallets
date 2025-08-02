@@ -64,7 +64,7 @@ function updateData() {
 }
 
 function drawCharts(location) {
-  const labels = ["Week", "Month", "6 Months", "Year"];
+  const labels = ["Year", "6 Months", "Month", "Week"];
 
   const pelletRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "pellet");
   const briquetteRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "briquette");
