@@ -72,18 +72,29 @@ function drawCharts(location) {
   const parseValues = row => [
     parseInt(row?.Week || 0),
     parseInt(row?.Month || 0),
-    parseInt(row?.["6 Months"] || 0),
-    parseInt(row?.Year || 0),
+    parseInt(row?.["6 Months"] || row?.["6mo"] || 0),
+    parseInt(row?.Year || 0)
   ];
 
   const pelletValues = parseValues(pelletRow);
   const briquetteValues = parseValues(briquetteRow);
 
-  // Remove old charts
   if (pelletChartInstance) pelletChartInstance.destroy();
   if (briquetteChartInstance) briquetteChartInstance.destroy();
 
-  const chartOptions = {
+  const getBounds = (values) => {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return {
+      suggestedMin: Math.floor(min * 0.95),
+      suggestedMax: Math.ceil(max * 1.05)
+    };
+  };
+
+  const pelletBounds = getBounds(pelletValues);
+  const briquetteBounds = getBounds(briquetteValues);
+
+  const getChartOptions = (suggestedMin, suggestedMax) => ({
     type: "line",
     options: {
       responsive: true,
@@ -95,6 +106,8 @@ function drawCharts(location) {
       scales: {
         y: {
           beginAtZero: false,
+          suggestedMin,
+          suggestedMax,
           ticks: {
             callback: value => `₹${value.toLocaleString("en-IN")}`
           }
@@ -109,11 +122,10 @@ function drawCharts(location) {
         }
       }
     }
-  };
+  });
 
-  // Pellet Chart
   pelletChartInstance = new Chart(document.getElementById("pelletChart"), {
-    ...chartOptions,
+    ...getChartOptions(pelletBounds.suggestedMin, pelletBounds.suggestedMax),
     data: {
       labels,
       datasets: [{
@@ -125,9 +137,8 @@ function drawCharts(location) {
     }
   });
 
-  // Briquette Chart
   briquetteChartInstance = new Chart(document.getElementById("briquetteChart"), {
-    ...chartOptions,
+    ...getChartOptions(briquetteBounds.suggestedMin, briquetteBounds.suggestedMax),
     data: {
       labels,
       datasets: [{
