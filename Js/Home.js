@@ -131,8 +131,8 @@ function drawCharts(location) {
       datasets: [{
         label: "Pellet Price",
         data: pelletValues,
-        borderColor: "#FFA500",
-        backgroundColor: "#FFEFD5"
+        borderColor: "#1C3D5A",
+        backgroundColor: "#DDEAF4"
       }]
     }
   });
