@@ -7,13 +7,15 @@ function formatNumber(num) {
 }
 
 async function fetchData() {
+  console.log("✅ JS file linked and fetchData running...");
   try {
     const response = await fetch(API_URL);
     sheetData = await response.json();
+    console.log("✅ Sheet data fetched:", sheetData);
     populateLocationDropdown();
-    updateData(); // Load data for default location
+    updateData(); // Load default location
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("❌ Error fetching data:", error);
   }
 }
 
@@ -21,8 +23,13 @@ function populateLocationDropdown() {
   const locationSelect = document.getElementById("locationSelect");
   const uniqueStates = [...new Set(sheetData.map(row => row.State?.trim()).filter(Boolean))];
 
-  // Clear and populate
   locationSelect.innerHTML = "";
+  const defaultOption = document.createElement("option");
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  defaultOption.textContent = "Select a Location";
+  locationSelect.appendChild(defaultOption);
+
   uniqueStates.forEach(state => {
     const option = document.createElement("option");
     option.value = state;
@@ -30,7 +37,6 @@ function populateLocationDropdown() {
     locationSelect.appendChild(option);
   });
 
-  // Add event listener **only after DOM exists and dropdown is filled**
   locationSelect.addEventListener("change", updateData);
 }
 
@@ -54,7 +60,8 @@ function updateData() {
 
   document.getElementById("pelletPrice").textContent = pelletPrice;
   document.getElementById("briquettePrice").textContent = briquettePrice;
+
+  console.log(`📍 Updated prices for ${location}: Pellet = ₹${pelletPrice}, Briquette = ₹${briquettePrice}`);
 }
 
-// ✅ Ensure everything runs after DOM is ready
 document.addEventListener("DOMContentLoaded", fetchData);
