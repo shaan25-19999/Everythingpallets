@@ -32,8 +32,11 @@
   <main>
     <h2>Live Market Price Update for India</h2>
 
-    <div id="locationDisplay">
-  <p><strong>Location:</strong> AVERAGE</p>
+  <div>
+  <label for="locationSelect"><strong>Select Location:</strong></label><br/>
+  <select id="locationSelect" onchange="updateData()">
+    <option disabled selected>Loading...</option>
+  </select>
 </div>
 
     <div class="price-section">
