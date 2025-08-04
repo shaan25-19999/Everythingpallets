@@ -18,6 +18,27 @@ html, body {
   display: flex;
   align-items: center;
 }
+nav {
+  background: #EAF6F6;
+  padding: 0.9rem 0;
+  box-shadow: inset 0 -1px 0 #D3E3EC;
+}
+.nav-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 28px;
+}
+.nav-links a {
+  color: #1C3D5A;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+}
+.nav-links a:hover {
+  color: #66A5AD;
+  text-decoration: underline;
+}
 
 /* Home link styling with icon */
 .home-link {
