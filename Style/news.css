@@ -145,13 +145,13 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 2rem;
   border-bottom: 1px solid #D3E3EC;
+  flex-wrap: wrap;
 }
 
 /* ✅ Nav links */
-.nav-links a,
-.home-link {
+.main-nav a {
   font-size: 1rem;
   color: #1C3D5A;
   font-weight: 600;
@@ -162,8 +162,7 @@ main {
   transition: color 0.2s ease;
 }
 
-.nav-links a:hover,
-.home-link:hover {
+.main-nav a:hover {
   color: #66A5AD;
   text-decoration: underline;
 }
