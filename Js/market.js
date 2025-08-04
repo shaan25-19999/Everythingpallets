@@ -175,6 +175,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById(timestampId).textContent = lastRow["Last Updated"];
     }
   }
+  function updateMaterialDropdowns(locationKey) {
+  materialSelect.innerHTML = "";
+  briquetteSelect.innerHTML = "";
+
+  const pelletMaterials = Object.keys(dataset[locationKey].materials.pellets);
+  pelletMaterials.forEach(mat => {
+    const opt = document.createElement("option");
+    opt.value = mat;
+    opt.textContent = mat;
+    materialSelect.appendChild(opt);
+  });
+
+  const briquetteMaterials = Object.keys(dataset[locationKey].materials.briquettes);
+  briquetteMaterials.forEach(mat => {
+    const opt = document.createElement("option");
+    opt.value = mat;
+    opt.textContent = mat;
+    briquetteSelect.appendChild(opt);
+  });
+}
 
   function refreshAll() {
   const loc = locationSelect.value;
