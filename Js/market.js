@@ -177,12 +177,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function refreshAll() {
-    const loc = locationSelect.value;
-    renderTable(loc);
-    renderBriquetteTable(loc);
-    updateChart(loc, materialSelect.value, chart, true);
-    updateChart(loc, briquetteSelect.value, briquetteChart, false);
-  }
+  const loc = locationSelect.value;
+  updateMaterialDropdowns(loc); // ✅ New: dynamically update dropdowns
+  renderTable(loc);
+  renderBriquetteTable(loc);
+
+  // ✅ Auto-select first material in each dropdown after update
+  const defaultPellet = materialSelect.options[0]?.value;
+  const defaultBriquette = briquetteSelect.options[0]?.value;
+
+  if (defaultPellet) updateChart(loc, defaultPellet, chart, true);
+  if (defaultBriquette) updateChart(loc, defaultBriquette, briquetteChart, false);
+}
 
   locationSelect.addEventListener("change", refreshAll);
   materialSelect.addEventListener("change", () => updateChart(locationSelect.value, materialSelect.value, chart, true));
