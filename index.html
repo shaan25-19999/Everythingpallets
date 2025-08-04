@@ -32,6 +32,12 @@
   <main>
     <h2>Live Market Price Update for India</h2>
 
+    <!-- ✅ LOCATION DROPDOWN -->
+    <label for="locationSelect"><strong>Select Location:</strong></label><br/>
+    <select id="locationSelect" onchange="updateData(this.value)">
+      <!-- Options will be populated by JS -->
+    </select>
+
     <div class="price-section">
       <div class="price-box">
         <strong>Pellet Price:</strong><br/>
