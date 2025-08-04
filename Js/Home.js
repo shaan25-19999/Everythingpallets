@@ -13,7 +13,7 @@ async function fetchData() {
     const response = await fetch(API_URL);
     sheetData = await response.json();
     populateLocationDropdown();
-    updateData("AVERAGE"); // ✅ Load AVERAGE first
+    updateData(); // default load
   } catch (error) {
     console.error("❌ Error fetching data:", error);
   }
@@ -23,7 +23,12 @@ function populateLocationDropdown() {
   const locationSelect = document.getElementById("locationSelect");
   const uniqueStates = [...new Set(sheetData.map(row => row.State?.trim()).filter(Boolean))];
 
-  locationSelect.innerHTML = ""; // ✅ Clear existing options
+  locationSelect.innerHTML = "";
+  const defaultOption = document.createElement("option");
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  defaultOption.textContent = "Select a Location";
+  locationSelect.appendChild(defaultOption);
 
   uniqueStates.forEach(state => {
     const option = document.createElement("option");
@@ -32,13 +37,11 @@ function populateLocationDropdown() {
     locationSelect.appendChild(option);
   });
 
-  locationSelect.value = "AVERAGE"; // ✅ Set default selected
-  locationSelect.addEventListener("change", () => {
-    updateData(locationSelect.value);
-  });
+  locationSelect.addEventListener("change", updateData);
 }
 
-function updateData(location) {
+function updateData() {
+  const location = document.getElementById("locationSelect").value?.trim();
   let pelletPrice = "--";
   let briquettePrice = "--";
 
@@ -68,7 +71,7 @@ function drawCharts(location) {
 
   const parseValues = row => [
     parseInt(row?.Year || 0),
-    parseInt(row?.["6 Month"] || 0),
+    parseInt(row?.["Month"] || row?.["6mo"] || 0),
     parseInt(row?.Month || 0),
     parseInt(row?.Week || 0)
   ];
