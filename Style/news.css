@@ -138,16 +138,15 @@ main {
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
 }
 
-/* ✅ NAVIGATION BAR WITH HOME ICON */
+/* ✅ FIXED NAVIGATION BAR */
 .main-nav {
   background-color: #F9F9F9;
   padding: 12px 20px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  border-bottom: 1px solid #D3E3EC;
   flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  border-bottom: 1px solid #D3E3EC;
 }
 
 /* ✅ Nav links */
