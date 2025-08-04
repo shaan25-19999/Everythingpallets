@@ -12,10 +12,30 @@ async function fetchData() {
   try {
     const response = await fetch(API_URL);
     sheetData = await response.json();
-    updateData("AVERAGE"); // Auto-load "AVERAGE"
+    populateLocationDropdown();
+    updateData("AVERAGE"); // ✅ Load AVERAGE first
   } catch (error) {
     console.error("❌ Error fetching data:", error);
   }
+}
+
+function populateLocationDropdown() {
+  const locationSelect = document.getElementById("locationSelect");
+  const uniqueStates = [...new Set(sheetData.map(row => row.State?.trim()).filter(Boolean))];
+
+  locationSelect.innerHTML = ""; // ✅ Clear existing options
+
+  uniqueStates.forEach(state => {
+    const option = document.createElement("option");
+    option.value = state;
+    option.textContent = state;
+    locationSelect.appendChild(option);
+  });
+
+  locationSelect.value = "AVERAGE"; // ✅ Set default selected
+  locationSelect.addEventListener("change", () => {
+    updateData(locationSelect.value);
+  });
 }
 
 function updateData(location) {
