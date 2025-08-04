@@ -8,16 +8,6 @@ html, body {
 }
 
 /* Top bar with polished gradient and border */
-.top-nav {
-  background: linear-gradient(to right, #EAF6F6, #DDEAF4);
-  padding: 14px 20px;
-  margin: 0;
-  text-align: left;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-  border-bottom: 1px solid #D3E3EC;
-  display: flex;
-  align-items: center;
-}
 nav {
   background: #EAF6F6;
   padding: 0.9rem 0;
@@ -38,6 +28,17 @@ nav {
 .nav-links a:hover {
   color: #66A5AD;
   text-decoration: underline;
+}
+
+.top-nav {
+  background: linear-gradient(to right, #EAF6F6, #DDEAF4);
+  padding: 14px 20px;
+  margin: 0;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  border-bottom: 1px solid #D3E3EC;
+  display: flex;
+  align-items: center;
 }
 
 /* Home link styling with icon */
