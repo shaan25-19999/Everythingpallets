@@ -173,6 +173,11 @@ main {
   transition: stroke 0.2s ease;
 }
 
+.news-header {
+  /* existing styles... */
+  margin-bottom: 24px; /* ✅ ADD THIS */
+}
+
 .home-link:hover .home-icon {
   stroke: #66A5AD;
 }
