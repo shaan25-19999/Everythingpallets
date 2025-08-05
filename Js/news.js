@@ -16,7 +16,7 @@ fetch('news.json')
         <h2>${item.title}</h2>
         <p><strong>${item.date}</strong></p>
         <p>${item.summary}</p>
-        <a href="${item.link}" target="_blank" rel="noopener noreferrer">Read More →</a>
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer">Read More</a>
       `;
 
       container.appendChild(card);
