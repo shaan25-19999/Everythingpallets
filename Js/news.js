@@ -1,4 +1,4 @@
-fetch('news.json')
+fetch('Data/News.json')
   .then(response => response.json())
   .then(newsItems => {
     const container = document.getElementById('news-container');
