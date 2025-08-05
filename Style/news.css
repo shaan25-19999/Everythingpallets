@@ -141,23 +141,25 @@ main {
 /* ✅ FIXED NAVIGATION BAR */
 .main-nav {
   background-color: #F9F9F9;
-  padding: 12px 20px;
+  padding: 10px 12px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 30px;
+  align-items: center;
+  gap: 1.2rem;
   border-bottom: 1px solid #D3E3EC;
 }
 
 /* ✅ Nav links */
 .main-nav a {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #1C3D5A;
   font-weight: 600;
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  white-space: nowrap;
   transition: color 0.2s ease;
 }
 
@@ -173,4 +175,16 @@ main {
 
 .home-link:hover .home-icon {
   stroke: #66A5AD;
+}
+
+/* 📱 Extra mobile tweak */
+@media (max-width: 420px) {
+  .main-nav {
+    gap: 0.8rem;
+    padding: 8px 8px;
+  }
+
+  .main-nav a {
+    font-size: 0.85rem;
+  }
 }
