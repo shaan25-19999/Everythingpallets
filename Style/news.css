@@ -182,6 +182,10 @@ main {
   stroke: #66A5AD;
 }
 
+.nav-spacer {
+  margin-top: 20px;
+}
+
 /* 📱 Extra mobile tweak */
 @media (max-width: 420px) {
   .main-nav {
