@@ -141,13 +141,13 @@ main {
 /* ✅ FIXED NAVIGATION BAR */
 .main-nav {
   background-color: #F9F9F9;
-  padding: 10px 12px;
+  padding: 12px 20px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  gap: 1.2rem;
+  gap: 30px;
   border-bottom: 1px solid #D3E3EC;
+  margin-top: 16px; 
 }
 
 /* ✅ Nav links */
