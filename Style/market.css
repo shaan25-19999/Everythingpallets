@@ -216,3 +216,28 @@ footer {
   color: #66A5AD;
   margin-top: 0.3rem;
 }
+body {
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.specs {
+  display: flex;
+  gap: 2rem;
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.specs p {
+  margin: 0;
+}
