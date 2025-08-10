@@ -1,6 +1,6 @@
 // ====== CONFIG (PUT YOUR MARKET SHEETBEST URL BELOW) ======
 
-https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68fcb04bf
+const API_URL =https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68fcb04bf
 
 // Expected columns (any casing/alias ok): 
 // State, Type ("Pellet"/"Briquette"), Price, Year, "6 Month"/"6mo"/"SixMonth", Month, Week,
