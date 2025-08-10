@@ -1,363 +1,246 @@
-/* ============ Peltra Market Styles ============ */
-
-/* Reset-ish */
+/* ========== Base ========== */
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
 body {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  background: #F7FAFB;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: #1C3D5A;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: #F7FAFC;
 }
 
-/* Header */
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+/* ========== Header & Nav ========== */
+.market-header {
   background: linear-gradient(90deg, #1C3D5A, #66A5AD);
   color: #fff;
-  padding: 28px 16px 24px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-.market-logo-container {
+  padding: 1.75rem 1rem 1.25rem;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
 }
+.market-logo-container { text-align: center; }
 .market-logo {
-  max-width: 135px;   /* matches the home/market agreed size */
+  max-width: 135px;
   height: auto;
   display: block;
-  margin: 0 auto 10px;
+  margin: 0 auto .75rem auto;
 }
-.market-heading {
-  margin: 0;
-  font-size: 1.8rem;
-  letter-spacing: 0.2px;
-  font-weight: 800;
-}
-.market-subheading {
-  margin: 6px 0 0;
-  font-size: 1rem;
-  opacity: 0.95;
-}
+.market-title { margin: 0; font-size: 1.9rem; font-weight: 700; }
+.market-subtitle { margin: .25rem 0 0; opacity: .95; }
 
-/* Nav */
-.sticky-nav {
-  position: sticky;
-  top: 88px;
-  z-index: 19;
+.market-nav {
   display: flex;
-  gap: 24px;
+  gap: 1.25rem;
   justify-content: center;
   background: #EAF6F6;
-  padding: 14px 10px;
-  border-bottom: 1px solid #D6E7EA;
+  padding: .8rem 1rem;
+  border-top: 1px solid rgba(255,255,255,.2);
 }
-.sticky-nav a {
+.market-nav a {
   color: #1C3D5A;
   text-decoration: none;
   font-weight: 600;
+  position: relative;
 }
-.sticky-nav a.active,
-.sticky-nav a:hover { color: #168aad; }
+.market-nav a.active::after,
+.market-nav a:hover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 2px;
+  background: #66A5AD;
+}
 
-/* Main layout */
-main {
-  max-width: 1200px;
-  margin: 22px auto 60px;
-  padding: 0 16px;
+/* ========== Layout ========== */
+.container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+/* ========== Snapshot KPIs ========== */
+.snapshot {
   display: grid;
-  gap: 20px;
+  grid-template-columns: repeat(4,1fr);
+  gap: 1rem;
+  margin-top: 1rem;
 }
-
-/* Generic panel */
-.panel {
+.kpi {
   background: #fff;
-  border: 1px solid #E2EDF2;
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  border: 1px solid #D3E3EC;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
+.kpi-label { font-size: .9rem; color: #456; margin-bottom: .25rem; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; }
+.kpi-sub { font-size: .9rem; color: #567; margin-top: .25rem; }
 
-/* Controls */
+/* Signals list */
+.besties .signals { margin: .25rem 0 0; padding-left: 1rem; }
+.besties li { margin: .15rem 0; }
+
+/* Confidence meter */
+.confidence-wrap { display: grid; gap: .4rem; }
+.confidence-bar {
+  background: #EDF2F7;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+.confidence-bar span {
+  display: block;
+  height: 10px;
+  width: 0%;
+  background: #CBD5E0;        /* low */
+  transition: width .3s ease;
+}
+.confidence-bar span[data-level="mid"] { background: #F6AD55; }
+.confidence-bar span[data-level="high"] { background: #48BB78; }
+.confidence-text { font-weight: 600; }
+
+/* ========== Controls ========== */
 .controls {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  align-items: end;
-  gap: 16px;
-}
-.control-group label {
-  display: block;
-  font-weight: 650;
-  margin-bottom: 6px;
-}
-#stateSelect, .controls select, .controls input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #B7D0DA;
-  border-radius: 8px;
+  grid-template-columns: repeat(3,1fr);
+  gap: 1rem;
   background: #fff;
-  color: #1C3D5A;
-  font-size: 0.98rem;
-}
-.segmented {
-  background: #EDF6F7;
-  border: 1px solid #CFE4EA;
-  border-radius: 999px;
-  padding: 4px;
-  display: inline-flex;
-  gap: 4px;
-}
-.seg {
-  border: 0;
-  background: transparent;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-weight: 700;
-  color: #1C3D5A;
-  cursor: pointer;
-}
-.seg.active {
-  background: #fff;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-}
-
-/* Last updated */
-.last-updated {
-  text-align: right;
-  font-size: 0.92rem;
-  color: #2b6777;
-}
-
-/* Summary cards */
-.summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.summary-card h3 {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
-  color: #1C3D5A;
-}
-.big-price {
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 2px 0 10px;
-}
-.meta-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.pill {
-  background: #EAF6F6;
-  color: #1C3D5A;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  border: 1px solid #D6E7EA;
-}
-.confidence {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.confidence .bar {
-  width: 120px;
-  height: 6px;
-  background: #E8EEF2;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid #D6E1E6;
-}
-.confidence .bar > span {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #ffb703, #2a9d8f);
-}
-
-/* Best row */
-.best-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.best-card {
-  border: 1px dashed #C9DDE3;
+  border: 1px solid #D3E3EC;
   border-radius: 12px;
-  padding: 16px;
-  background: #FBFEFF;
+  padding: 1rem;
+  margin: 1.25rem 0;
 }
-.best-card h4 {
-  margin: 0 0 8px;
-}
-.best-line {
-  font-size: 1.1rem;
-  margin: 0 0 10px;
-}
-
-/* Freight calculator */
-.freight .grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.freight .grid-span {
-  grid-column: 1 / -1;
-}
-.freight label {
-  display: block;
-  font-weight: 650;
-  margin-bottom: 6px;
-}
-.freight input, .freight select {
+.control label { display: block; margin-bottom: .4rem; }
+.control select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #B7D0DA;
+  padding: .6rem .75rem;
+  border: 1px solid #66A5AD;
   border-radius: 8px;
   background: #fff;
   color: #1C3D5A;
-  font-size: 0.98rem;
-}
-.calc-note {
-  margin-top: 10px;
-  color: #5a7b8b;
-  font-size: 0.92rem;
 }
 
-/* Trends */
-.trends .trend-grid {
+/* ========== Tables ========== */
+.section { margin: 1.25rem 0; }
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+}
+.table th, .table td {
+  border: 1px solid #EEF2F7;
+  padding: .75rem;
+  text-align: center;
+}
+.table th {
+  background: #E0F1F1;
+  font-weight: 600;
+}
+
+/* ========== Charts ========== */
+.charts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 .chart-box {
-  border: 1px solid #E2EDF2;
-  border-radius: 12px;
-  padding: 12px;
   background: #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  border: 1px solid #D3E3EC;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  min-height: 280px;
 }
-.chart-box h4 {
-  margin: 2px 0 8px;
-}
+.chart-box h4 { margin: .2rem 0 .4rem; }
+.chart-box canvas { width: 100% !important; }
+.timestamp { color: #6b7d90; font-size: .9rem; margin-top: .25rem; }
 
-/* Policy/News feed */
-.policy .news-feed {
+/* ========== Forecast & Seasonal ========== */
+.forecast-season {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
 }
-.news-card {
+.forecast, .seasonal {
   background: #fff;
-  border: 1px solid #E2EDF2;
+  border: 1px solid #D3E3EC;
   border-radius: 12px;
-  padding: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05);
 }
-.news-tag {
-  display: inline-block;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #EAF6F6;
-  color: #1C3D5A;
-  border: 1px solid #D6E7EA;
-}
-.news-title { margin: 8px 0 6px; font-weight: 700; }
-.news-meta { font-size: 0.85rem; color: #6b8a99; margin-bottom: 8px; }
-.news-summary { font-size: 0.95rem; color: #274c5e; margin-bottom: 8px; }
-.news-link { font-weight: 700; color: #1C3D5A; text-decoration: none; }
-.news-link:hover { color: #168aad; }
 
-.link-more {
-  display: inline-block;
-  margin-top: 10px;
-  color: #168aad;
-  text-decoration: none;
-  font-weight: 700;
+/* ========== Freight / Landed Cost ========== */
+.freight {
+  background: #fff;
+  border: 1px solid #D3E3EC;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
 }
+.freight-form {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+.freight-form input,
+.freight-form select {
+  width: 100%;
+  padding: .6rem .75rem;
+  border: 1px solid #66A5AD;
+  border-radius: 8px;
+  background: #fff;
+  color: #1C3D5A;
+}
+.freight-result { margin-top: .5rem; font-weight: 600; }
+.tiny { font-size: .85rem; color: #6b7d90; }
 
 /* Buttons */
 .btn {
-  appearance: none;
-  border: 1px solid #BBD7DF;
-  background: #fff;
-  color: #1C3D5A;
-  font-weight: 700;
-  padding: 10px 14px;
+  display: inline-block;
+  border: none;
+  padding: .65rem 1rem;
   border-radius: 10px;
-  cursor: pointer;
-}
-.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
-.btn:active { transform: translateY(0); box-shadow: none; }
-
-.btn-primary {
-  background: #1C3D5A;
+  background: #66A5AD;
   color: #fff;
-  border-color: #153349;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
 }
-.btn-primary:hover { background: #153349; }
+.btn:hover { filter: brightness(1.03); }
+.btn.primary { background: #1C3D5A; }
 
-.btn-outline {
-  background: #fff;
-  color: #1C3D5A;
-  border: 1px solid #1C3D5A;
-}
-
-/* CTAs */
-.ctas {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-/* Modals */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(16, 28, 38, 0.55);
-  display: grid;
-  place-items: center;
-  padding: 20px;
-}
-.modal[hidden] { display: none; }
-
-.modal-card {
-  background: #fff;
+/* ========== Sourcing Guarantee ========== */
+.guarantee {
+  background: linear-gradient(90deg, #1C3D5A, #66A5AD);
+  color: #fff;
+  margin-top: 1.25rem;
   border-radius: 14px;
-  border: 1px solid #DCE8EE;
-  padding: 18px;
-  width: 100%;
-  max-width: 460px;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+  padding: 1.1rem;
+  display: grid;
+  gap: .5rem;
+  align-items: center;
 }
-.modal-card h3 { margin-top: 0; }
-.modal-card label {
-  display: block;
-  font-weight: 650;
-  margin: 10px 0 6px;
-}
-.modal-card input, .modal-card select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #B7D0DA;
-  border-radius: 8px;
-  background: #fff;
-  color: #1C3D5A;
-}
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 14px;
+.guarantee .btn { background: #fff; color: #1C3D5A; }
+
+/* ========== Footer ========== */
+.footer {
+  background: linear-gradient(90deg, #1C3D5A, #66A5AD);
+  color: #fff;
+  text-align: center;
+  padding: 1rem;
+  margin-top: 1.5rem;
 }
 
-/* Responsive */
+/* ========== Responsive ========== */
 @media (max-width: 980px) {
-  .summary, .best-row, .trends .trend-grid, .policy .news-feed { grid-template-columns: 1fr; }
+  .snapshot { grid-template-columns: 1fr 1fr; }
+  .charts, .forecast-season { grid-template-columns: 1fr; }
+  .freight-form { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .snapshot { grid-template-columns: 1fr; }
   .controls { grid-template-columns: 1fr; }
+  .freight-form { grid-template-columns: 1fr; }
 }
