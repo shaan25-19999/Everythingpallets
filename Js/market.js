@@ -2,8 +2,10 @@
    Peltra Market Command Center
    =========================== */
 
-const MARKET_JSON = "data/Market-price.json";
-const NEWS_JSON = "data/News.json";
+
+const loadData = async () => {
+  const res = await fetch("https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68fcb04bf");
+  sheetData = await res.json();
 
 let rawData = [];         // full market rows
 let states = [];          // unique state list
