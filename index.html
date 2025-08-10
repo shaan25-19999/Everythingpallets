@@ -4,40 +4,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- ✅ SEO Meta Tags -->
-  <title>EverythingPellets – Live Biomass Market Prices in India</title>
-  <meta name="description" content="Track real-time prices of biomass pellets and briquettes across India. Compare rates by state, view trend charts, and ensure quality supply.">
+  <!-- ✅ SEO -->
+  <title>PelletRates – Live Biomass Market Prices in India</title>
+  <meta name="description" content="Track real-time prices of biomass pellets and briquettes across India. Compare rates by state and view trend charts." />
+  <link rel="canonical" href="https://pelletrates.com/" />
 
-  <!-- ✅ Canonical URL -->
-  <link rel="canonical" href="https://everythingpellets.com/index.html" />
-
-  <!-- ✅ Open Graph Tags for Social Sharing -->
-  <meta property="og:title" content="EverythingPellets – Live Biomass Market Prices in India">
-  <meta property="og:description" content="Live data on pellet and briquette prices. Quality support. Trusted supplier network.">
-  <meta property="og:image" content="https://everythingpellets.com/assets/preview.jpg"> <!-- Replace with actual image -->
-  <meta property="og:url" content="https://everythingpellets.com/index.html">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
+  <!-- ✅ Social (update preview image path if needed) -->
+  <meta property="og:title" content="PelletRates – Live Biomass Market Prices in India" />
+  <meta property="og:description" content="Live pellet & briquette prices by state with clean charts and quick insights." />
+  <meta property="og:image" content="assets/preview.jpg" />
+  <meta property="og:url" content="https://pelletrates.com/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
 
   <!-- ✅ Favicon -->
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
-  <!-- ✅ Styles & Scripts -->
+  <!-- ✅ Styles & Chart.js -->
+  <link rel="stylesheet" href="style/Home.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style/home.css">
 </head>
 <body>
 
-  <!-- ✅ HEADER WITH LOGO AND TITLE -->
+  <!-- HEADER -->
   <header class="site-header">
     <div class="logo-header">
-      <img src="assets/Logo.png" alt="EverythingPellets Logo" class="site-logo" />
-      <h1 class="home-title">HOME</h1>
-      <p class="site-tagline">For your every biomass and green energy need</p>
+      <img src="assets/Logo.png" alt="PelletRates Logo" class="site-logo" />
+      <p class="home-title">PelletRates</p>
+      <p class="site-tagline">Live pellet & briquette prices across India</p>
     </div>
   </header>
 
-  <!-- ✅ NAVIGATION -->
+  <!-- NAV -->
   <nav>
     <div class="nav-links">
       <a href="index.html">Home</a>
@@ -47,15 +45,16 @@
     </div>
   </nav>
 
-  <!-- ✅ MAIN CONTENT -->
+  <!-- MAIN -->
   <main>
-    <h2>Live Market Price Update for India</h2>
+    <h2>Live Market Price Update</h2>
 
-  <div>
-   <label for="locationSelect"><strong>Select Location:</strong></label><br/>
-    <select id="locationSelect" onchange="updateData(this.value)">
-  </select>
-</div>
+    <div>
+      <label for="locationSelect"><strong>Select Location:</strong></label><br/>
+      <select id="locationSelect">
+        <option disabled selected>Loading...</option>
+      </select>
+    </div>
 
     <div class="price-section">
       <div class="price-box">
@@ -77,18 +76,17 @@
       </div>
     </div>
 
-    <div class="cta">
-      <h3>Contact us for fair market rates and quality supply support</h3>
-      <button onclick="alert('Callback requested')">Request Callback</button>
+    <div class="cta" onclick="window.location.href='contact.html'">
+      <h3>Get today’s best rate & secure supply →</h3>
     </div>
   </main>
 
-  <!-- ✅ FOOTER -->
+  <!-- FOOTER -->
   <footer>
-    <p>&copy; 2025 EverythingPellets. All rights reserved.</p>
+    <p>&copy; 2025 PelletRates. All rights reserved.</p>
   </footer>
 
-  <!-- ✅ CONNECTED SCRIPT -->
+  <!-- JS -->
   <script src="js/Home.js"></script>
 </body>
 </html>
