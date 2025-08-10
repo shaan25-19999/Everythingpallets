@@ -1,153 +1,312 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Market Prices • Peltra</title>
-  <link rel="stylesheet" href="style/market.css">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
 
-  <!-- Header -->
-  <header class="sticky-header">
-    <div class="market-logo-container">
-      <img src="assets/Logo.png" alt="Peltra Logo" class="market-logo" />
-    </div>
-    <h1>Market Prices</h1>
-    <p class="subhead">Hyper‑local pellet & briquette intelligence</p>
-  </header>
+New market js
 
-  <!-- Nav -->
-  <nav class="sticky-nav">
-    <a href="index.html">Home</a>
-    <a class="active" href="market.html">Market Prices</a>
-    <a href="news.html">News</a>
-    <a href="contact.html">Contact</a>
-  </nav>
+// ====== CONFIG ======
+const API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
+// Expected columns: State, Type ("Pellet"/"Briquette"), Price, Year, "6 Month" (or "6mo"), Month, Week, Material (optional), Updated (optional)
 
-  <main>
-    <!-- Top controls + status -->
-    <section class="bar">
-      <div class="control">
-        <label for="locationSelect">Location</label>
-        <select id="locationSelect"></select>
-      </div>
+let sheetData = [];
+let selectedLocation = "AVERAGE";
+let pelletChart, briquetteChart;
 
-      <div class="status">
-        <span id="confidenceBadge" class="badge">Confidence: --</span>
-        <span id="lastUpdated" class="muted">Last updated: --</span>
-      </div>
-    </section>
+// ====== UTILS ======
+const fmtINR = (n) => isNaN(n) || n === null ? "--" : Number(n).toLocaleString("en-IN");
+const toNum = (v) => v ? parseInt(String(v).replace(/,/g, ""), 10) : 0;
 
-    <!-- Big numbers -->
-    <section class="cards">
-      <div class="kpi">
-        <div class="kpi-title">Pellet Price(8mm)</div>
-        <div class="kpi-value">₹<span id="pelletPrice">--</span>/ton</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-title">Briquette Price(90mm)</div>
-        <div class="kpi-value">₹<span id="briquettePrice">--</span>/ton</div>
-      </div>
-      <div class="kpi soft">
-        <div class="kpi-title">Today’s Best Buy (India)</div>
-        <div class="kpi-value sm">
-          ₹<span id="bestBuyPrice">--</span>/ton
-          <span class="pill" id="bestBuyWhere">--</span>
-        </div>
-      </div>
-      <div class="kpi soft">
-        <div class="kpi-title">Today’s Best Sell (India)</div>
-        <div class="kpi-value sm">
-          ₹<span id="bestSellPrice">--</span>/ton
-          <span class="pill warn" id="bestSellWhere">--</span>
-        </div>
-      </div>
-    </section>
+const get6M = (row) => {
+  if (!row) return 0;
+  return toNum(row["6 Month"] ?? row["6month"] ?? row["6mo"] ?? row["SixMonth"] ?? 0);
+};
 
-    <!-- Material selectors + charts -->
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Pellet Price Trend(8mm)</h3>
-        <div class="selectors">
-          <label for="pelletMaterialSelect">Pellet type</label>
-          <select id="pelletMaterialSelect"></select>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="pelletChart"></canvas>
-      </div>
-      <p class="muted" id="pelletTimestamp">—</p>
-    </section>
+const confidenceFrom = (pelletRow, briquetteRow) => {
+  let score = 0;
+  [pelletRow, briquetteRow].forEach(r => {
+    if (!r) return;
+    let parts = 0;
+    if (toNum(r.Year)) parts++;
+    if (get6M(r)) parts++;
+    if (toNum(r.Month)) parts++;
+    if (toNum(r.Week)) parts++;
+    score += parts;
+  });
+  if (score >= 6) return { label: "High", cls: "ok" };
+  if (score >= 3) return { label: "Medium", cls: "mid" };
+  return { label: "Low", cls: "low" };
+};
 
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Briquette Price Trend(90mm)</h3>
-        <div class="selectors">
-          <label for="briquetteMaterialSelect">Briquette type</label>
-          <select id="briquetteMaterialSelect"></select>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="briquetteChart"></canvas>
-      </div>
-      <p class="muted" id="briquetteTimestamp">—</p>
-    </section>
+// ====== DATA LOAD ======
+async function fetchData() {
+  const res = await fetch(API_URL);
+  sheetData = await res.json();
+  buildLocationSelect();
+  buildMaterialSelects();
+  setSelectedLocation("AVERAGE"); // default view
+  computeBestDeals();
+  setSeasonalBanner();
+  wireFreightCalc();
+  updateAll();
+}
 
-    <!-- Seasonal impact -->
-    <section class="stripe" id="seasonalBanner">
-      <strong>Seasonal Impact:</strong> <span id="seasonalText">—</span>
-    </section>
+// ====== CONTROLS ======
+function buildLocationSelect() {
+  const sel = document.getElementById("locationSelect");
+  sel.innerHTML = "";
+  const states = [...new Set(sheetData.map(r => r.State?.trim()).filter(Boolean))].sort();
+  states.forEach(state => {
+    const opt = document.createElement("option");
+    opt.value = state;
+    opt.textContent = state;
+    sel.appendChild(opt);
+  });
+  // make sure AVERAGE exists visually; if not present, prepend it
+  if (![...sel.options].some(o => o.value.toUpperCase() === "AVERAGE")) {
+    const opt = document.createElement("option");
+    opt.value = "AVERAGE";
+    opt.textContent = "AVERAGE";
+    sel.insertBefore(opt, sel.firstChild);
+  }
+  sel.value = selectedLocation;
+  sel.addEventListener("change", (e) => {
+    setSelectedLocation(e.target.value);
+    updateAll();
+  });
+}
 
-    <!-- Freight calculator -->
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Freight Calculator</h3>
-        <p class="muted">Estimate landed cost quickly (editable assumptions).</p>
-      </div>
-      <div class="grid-3">
-        <div class="control">
-          <label for="fcDistance">Distance (km)</label>
-          <input id="fcDistance" type="number" min="0" value="250" />
-        </div>
-        <div class="control">
-          <label for="fcTonnage">Load (tons)</label>
-          <input id="fcTonnage" type="number" min="1" value="20" />
-        </div>
-        <div class="control">
-          <label for="fcRate">Rate (₹/ton·km)</label>
-          <input id="fcRate" type="number" min="0" step="0.1" value="3.0" />
-        </div>
-      </div>
-      <div class="cards">
-        <div class="kpi">
-          <div class="kpi-title">Freight / ton</div>
-          <div class="kpi-value">₹<span id="fcPerTon">--</span></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Total Freight</div>
-          <div class="kpi-value">₹<span id="fcTotal">--</span></div>
-        </div>
-      </div>
-    </section>
+function buildMaterialSelects() {
+  const pelletSel = document.getElementById("pelletMaterialSelect");
+  const briqSel = document.getElementById("briquetteMaterialSelect");
+  const pelletMaterials = [...new Set(sheetData.filter(r => (r.Type||"").toLowerCase()==="pellet").map(r => r.Material || "Standard"))].sort();
+  const briqMaterials   = [...new Set(sheetData.filter(r => (r.Type||"").toLowerCase()==="briquette").map(r => r.Material || "Standard"))].sort();
 
-    <!-- CTAs -->
-    <section class="cta">
-      <h3>Lock today’s rate with Peltra Sourcing</h3>
-      <p class="muted">Match/beat best verified price. Priority dispatch in key clusters.</p>
-      <div class="cta-actions">
-        <a class="btn primary" href="https://wa.me/919999999999" target="_blank" rel="noopener">WhatsApp Us</a>
-        <a class="btn" href="tel:+919999999999">Call Now</a>
-      </div>
-    </section>
-  </main>
+  const fill = (el, list) => {
+    el.innerHTML = "";
+    list.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      el.appendChild(opt);
+    });
+    el.addEventListener("change", updateChartsOnly);
+  };
 
-  <footer class="footer">
-    <p>© 2025 Peltra • Building the biomass operating system</p>
-  </footer>
+  fill(pelletSel, pelletMaterials.length ? pelletMaterials : ["Standard"]);
+  fill(briqSel,   briqMaterials.length   ? briqMaterials   : ["Standard"]);
+}
 
-  <script src="js/market.js"></script>
-</body>
-</html>
+function setSelectedLocation(loc) {
+  selectedLocation = (loc || "AVERAGE").trim().toUpperCase();
+  const sel = document.getElementById("locationSelect");
+  if (sel && sel.value !== selectedLocation) sel.value = selectedLocation;
+}
+
+// ====== RENDER ======
+function updateAll() {
+  renderPrices();
+  renderStatus();
+  renderCharts();
+}
+
+function findRow(type, material) {
+  const t = type.toLowerCase();
+  const m = (material || "Standard").trim();
+  // Prefer exact material match for location; fallback to any material in location; then fallback to AVERAGE
+  let rows = sheetData.filter(r =>
+    (r.State?.trim().toUpperCase() === selectedLocation) &&
+    ((r.Type||"").toLowerCase() === t)
+  );
+
+  let exact = rows.find(r => (r.Material || "Standard") === m);
+  if (exact) return exact;
+
+  if (rows.length) return rows[0];
+
+  if (selectedLocation !== "AVERAGE") {
+    rows = sheetData.filter(r =>
+      (r.State?.trim().toUpperCase() === "AVERAGE") &&
+      ((r.Type||"").toLowerCase() === t)
+    );
+    let fallback = rows.find(r => (r.Material || "Standard") === m) || rows[0];
+    if (fallback) return fallback;
+  }
+  return null;
+}
+
+function renderPrices() {
+  const pelletRow = findRow("pellet", document.getElementById("pelletMaterialSelect").value);
+  const briqRow   = findRow("briquette", document.getElementById("briquetteMaterialSelect").value);
+
+  const pelletPrice = pelletRow ? toNum(pelletRow.Price) : null;
+  const briqPrice   = briqRow ? toNum(briqRow.Price) : null;
+
+  document.getElementById("pelletPrice").textContent = fmtINR(pelletPrice);
+  document.getElementById("briquettePrice").textContent = fmtINR(briqPrice);
+
+  // timestamps if present
+  const pUpd = pelletRow?.Updated || "";
+  const bUpd = briqRow?.Updated || "";
+  document.getElementById("pelletTimestamp").textContent = pUpd ? `Updated: ${pUpd}` : "—";
+  document.getElementById("briquetteTimestamp").textContent = bUpd ? `Updated: ${bUpd}` : "—";
+}
+
+function renderStatus() {
+  const pelletRow = findRow("pellet", document.getElementById("pelletMaterialSelect").value);
+  const briqRow   = findRow("briquette", document.getElementById("briquetteMaterialSelect").value);
+  const { label, cls } = confidenceFrom(pelletRow, briqRow);
+  const badge = document.getElementById("confidenceBadge");
+  badge.textContent = `Confidence: ${label}`;
+  badge.className = `badge ${cls}`;
+
+  const anyUpd = pelletRow?.Updated || briqRow?.Updated;
+  document.getElementById("lastUpdated").textContent = `Last updated: ${anyUpd || "--"}`;
+}
+
+function renderCharts() {
+  // destroy old
+  if (pelletChart) pelletChart.destroy();
+  if (briquetteChart) briquetteChart.destroy();
+
+  const labels = ["Year", "6 Months", "Month", "Week"];
+  const pelletRow = findRow("pellet", document.getElementById("pelletMaterialSelect").value);
+  const briqRow   = findRow("briquette", document.getElementById("briquetteMaterialSelect").value);
+
+  const pelletVals = [
+    toNum(pelletRow?.Year),
+    get6M(pelletRow),
+    toNum(pelletRow?.Month),
+    toNum(pelletRow?.Week)
+  ];
+  const briqVals = [
+    toNum(briqRow?.Year),
+    get6M(briqRow),
+    toNum(briqRow?.Month),
+    toNum(briqRow?.Week)
+  ];
+
+  const bounds = (vals) => {
+    const arr = vals.filter(v => v > 0);
+    if (!arr.length) return { min: 0, max: 1000 };
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    if (min === max) return { min: min * 0.95, max: max * 1.05 || min + 100 };
+    return { min: Math.floor(min * 0.95), max: Math.ceil(max * 1.05) };
+    };
+
+  const pB = bounds(pelletVals);
+  const bB = bounds(briqVals);
+
+  const baseOpts = (min, max) => ({
+    type: "line",
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      elements: {
+        line: { tension: 0.3, borderWidth: 2 },
+        point: { radius: 3 }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          suggestedMin: min,
+          suggestedMax: max,
+          ticks: { callback: v => `₹${Number(v).toLocaleString("en-IN")}` }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `₹${ctx.parsed.y.toLocaleString("en-IN")}/ton`
+          }
+        }
+      }
+    }
+  });
+
+  pelletChart = new Chart(document.getElementById("pelletChart"), {
+    ...baseOpts(pB.min, pB.max),
+    data: {
+      labels,
+      datasets: [{
+        label: "Pellet",
+        data: pelletVals,
+        borderColor: "#1C3D5A",
+        backgroundColor: "rgba(29, 61, 90, 0.08)",
+        fill: true
+      }]
+    }
+  });
+
+  briquetteChart = new Chart(document.getElementById("briquetteChart"), {
+    ...baseOpts(bB.min, bB.max),
+    data: {
+      labels,
+      datasets: [{
+        label: "Briquette",
+        data: briqVals,
+        borderColor: "#FFA500",
+        backgroundColor: "rgba(255,165,0,0.12)",
+        fill: true
+      }]
+    }
+  });
+}
+
+function updateChartsOnly() {
+  renderPrices();
+  renderCharts();
+}
+
+// ====== BEST DEALS ======
+function computeBestDeals() {
+  // min pellet across India
+  const pellets = sheetData.filter(r => (r.Type||"").toLowerCase()==="pellet" && toNum(r.Price)>0);
+  const briqs   = sheetData.filter(r => (r.Type||"").toLowerCase()==="briquette" && toNum(r.Price)>0);
+
+  const minPellet = pellets.reduce((a,b) => toNum(b.Price) < toNum(a.Price) ? b : a, pellets[0] || null);
+  const maxPellet = pellets.reduce((a,b) => toNum(b.Price) > toNum(a.Price) ? b : a, pellets[0] || null);
+  const minBriq   = briqs.reduce((a,b) => toNum(b.Price) < toNum(a.Price) ? b : a, briqs[0] || null);
+  const maxBriq   = briqs.reduce((a,b) => toNum(b.Price) > toNum(a.Price) ? b : a, briqs[0] || null);
+
+  const bestBuy = [minPellet, minBriq].filter(Boolean).reduce((a,b)=> toNum(b.Price) < toNum(a.Price) ? b : a, minPellet || minBriq);
+  const bestSell = [maxPellet, maxBriq].filter(Boolean).reduce((a,b)=> toNum(b.Price) > toNum(a.Price) ? b : a, maxPellet || maxBriq);
+
+  document.getElementById("bestBuyPrice").textContent = fmtINR(bestBuy ? toNum(bestBuy.Price): null);
+  document.getElementById("bestBuyWhere").textContent = bestBuy ? (bestBuy.State || "—") : "—";
+  document.getElementById("bestSellPrice").textContent = fmtINR(bestSell ? toNum(bestSell.Price): null);
+  document.getElementById("bestSellWhere").textContent = bestSell ? (bestSell.State || "—") : "—";
+}
+
+// ====== SEASONAL IMPACT ======
+function setSeasonalBanner() {
+  const month = new Date().getMonth(); // 0=Jan
+  const notes = {
+    3: "Rabi harvest increases agri‑residue → prices may soften regionally.",
+    4: "Transport tightness around holidays → freight can spike.",
+    9: "Kharif harvest brings fresh residue → watch short‑term dips.",
+  };
+  const text = notes[month] || "Stable seasonality expected. Track freight & local availability.";
+  document.getElementById("seasonalText").textContent = text;
+}
+
+// ====== FREIGHT CALC ======
+function wireFreightCalc() {
+  const d = document.getElementById("fcDistance");
+  const t = document.getElementById("fcTonnage");
+  const r = document.getElementById("fcRate");
+  const calc = () => {
+    const dist = Number(d.value||0);
+    const tons = Number(t.value||0);
+    const rate = Number(r.value||0);
+    const total = dist * rate * tons;          // ₹
+    const perTon = dist * rate;                // ₹/ton
+    document.getElementById("fcTotal").textContent = fmtINR(total);
+    document.getElementById("fcPerTon").textContent = fmtINR(perTon);
+  };
+  [d,t,r].forEach(el => el.addEventListener("input", calc));
+  calc();
+}
+
+// ====== INIT ======
+document.addEventListener("DOMContentLoaded", fetchData);
+
+
