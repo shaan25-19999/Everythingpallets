@@ -4,14 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Biomass Market Prices – Pellets & Briquettes | EverythingPellets</title>
-  <meta name="description" content="Live biomass fuel prices across India. Compare 8mm pellet and 90mm briquette rates, view trends, specs, and compute freight.">
+  <!-- ✅ SEO Meta Tags -->
+  <title>Biomass Market Prices in India – Pellets & Briquettes | EverythingPellets</title>
+  <meta name="description" content="View live biomass fuel prices including 8mm pellets and 90mm briquettes across India. Track price trends by location, material type, and quality specs.">
+  <meta name="keywords" content="biomass prices, pellet rates, briquette market, 8mm pellets, 90mm briquettes, biomass fuel India, renewable energy prices, market trend biomass">
+  <meta name="author" content="EverythingPellets">
 
-  <!-- Canonical (optional) -->
-  <!-- <link rel="canonical" href="https://everythingpellets.com/marketprice.html" /> -->
+  <!-- ✅ Canonical URL -->
+  <link rel="canonical" href="https://everythingpellets.com/market.html" />
 
+  <!-- ✅ Open Graph Tags for Social Sharing -->
+  <meta property="og:title" content="Live Biomass Pellet & Briquette Prices in India – EverythingPellets">
+  <meta property="og:description" content="Compare prices of 8mm pellets and 90mm briquettes by state and material type. See price trends and quality insights.">
+  <meta property="og:image" content="https://everythingpellets.com/assets/preview.jpg"> <!-- 🔁 Replace if needed -->
+  <meta property="og:url" content="https://everythingpellets.com/market.html">
+  <meta property="og:type" content="website">
 
-  <!-- HEADER -->
+  <!-- ✅ Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- ✅ Favicon -->
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
+  <!-- ✅ Styles & Scripts -->
+  <link rel="stylesheet" href="style/market.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+
+  <!-- ✅ HEADER WITH LOGO AND TITLE -->
   <header class="sticky-header">
     <div class="market-logo-container">
       <img src="assets/Logo.png" alt="EverythingPellets Logo" class="market-logo" />
@@ -20,39 +42,16 @@
     <p>Live Pellet & Briquette Price Intelligence by Location</p>
   </header>
 
-  <!-- NAV -->
+  <!-- ✅ NAVIGATION -->
   <nav class="sticky-nav">
     <a href="index.html">Home</a>
-    <a href="marketprice.html">Market Prices</a>
+    <a href="market.html">Market Prices</a>
     <a href="news.html">News</a>
     <a href="contact.html">Contact</a>
   </nav>
 
+  <!-- ✅ MAIN CONTENT -->
   <main>
-    <!-- STATUS ROW: confidence + last updated + seasonal -->
-    <section class="section" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <div>
-        <span id="confidenceBadge" class="badge" style="padding:8px 12px;border-radius:999px;background:#e8f5e9;color:#1b5e20;font-weight:600;">Confidence: —</span>
-      </div>
-      <div id="lastUpdated" class="last-updated">Last updated: --</div>
-      <div id="seasonalText" style="font-size:0.95rem;color:#1C3D5A;">Seasonal note will appear here.</div>
-    </section>
-
-    <!-- BEST DEALS -->
-    <section class="section" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
-      <div style="background:#fff;border:1px solid #D3E3EC;border-radius:12px;padding:1rem;">
-        <h3 style="margin:0 0 .5rem;">Best Buy (Lowest ₹)</h3>
-        <div style="font-size:1.6rem;font-weight:700;">₹<span id="bestBuyPrice">--</span></div>
-        <div style="color:#555;margin-top:.25rem;">Location: <strong id="bestBuyWhere">—</strong></div>
-      </div>
-      <div style="background:#fff;border:1px solid #D3E3EC;border-radius:12px;padding:1rem;">
-        <h3 style="margin:0 0 .5rem;">Best Sell (Highest ₹)</h3>
-        <div style="font-size:1.6rem;font-weight:700;">₹<span id="bestSellPrice">--</span></div>
-        <div style="color:#555;margin-top:.25rem;">Location: <strong id="bestSellWhere">—</strong></div>
-      </div>
-    </section>
-
-    <!-- LOCATION SELECT -->
     <section class="section">
       <label for="locationSelect"><strong>Select Location:</strong></label>
       <select id="locationSelect" class="styled-dropdown"></select>
@@ -60,7 +59,6 @@
 
     <hr/>
 
-    <!-- PELLET TABLE -->
     <section class="section">
       <h3>Pellet Prices (₹/ton) (8mm)</h3>
       <table id="materialTable" class="hover-table"></table>
@@ -68,7 +66,6 @@
 
     <hr/>
 
-    <!-- BRIQUETTE TABLE -->
     <section class="section">
       <h3>Briquette Prices (₹/ton) (90mm)</h3>
       <table id="briquetteTable" class="hover-table"></table>
@@ -76,7 +73,7 @@
 
     <hr/>
 
-    <!-- PELLET CHART + SPECS -->
+    <!-- ✅ Pellet Graph Section -->
     <section class="section graph-box">
       <label for="materialSelect"><strong>Select Pellet Type for Price Trend:</strong></label>
       <select id="materialSelect" class="styled-dropdown"></select>
@@ -94,7 +91,7 @@
 
     <hr/>
 
-    <!-- BRIQUETTE CHART + SPECS -->
+    <!-- ✅ Briquette Graph Section -->
     <section class="section graph-box">
       <label for="briquetteSelect"><strong>Select Briquette Type for Price Trend:</strong></label>
       <select id="briquetteSelect" class="styled-dropdown"></select>
@@ -109,64 +106,14 @@
       <canvas id="briquetteChart" width="400" height="200"></canvas>
       <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span></p>
     </section>
-
-    <hr/>
-
-    <!-- FREIGHT CALCULATOR -->
-    <section class="section">
-      <h3>Freight Calculator</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-        <div>
-          <label for="fcDistance"><strong>Distance (km)</strong></label>
-          <input id="fcDistance" type="number" min="0" step="1" placeholder="e.g., 250" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
-        </div>
-        <div>
-          <label for="fcTonnage"><strong>Tonnage (tons)</strong></label>
-          <input id="fcTonnage" type="number" min="0" step="1" placeholder="e.g., 20" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
-        </div>
-        <div>
-          <label for="fcRate"><strong>Rate (₹/ton/km)</strong></label>
-          <input id="fcRate" type="number" min="0" step="0.1" placeholder="e.g., 2.5" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
-        </div>
-      </div>
-      <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-top:1rem;">
-        <div>Per‑ton freight: <strong>₹<span id="fcPerTon">--</span></strong></div>
-        <div>Total freight: <strong>₹<span id="fcTotal">--</span></strong></div>
-      </div>
-    </section>
   </main>
 
+  <!-- ✅ FOOTER -->
   <footer class="footer">
     <p>&copy; 2025 EverythingPellets. Made with sustainability in mind.</p>
   </footer>
 
-  <!-- JS: uses the Market sheet endpoint, preserves original logic + your new features -->
+  <!-- ✅ SCRIPT -->
   <script src="js/market.js"></script>
-  <script>
-    // Optional: auto-update chart titles with location + material
-    function wireDynamicTitles() {
-      const locSel = document.getElementById('locationSelect');
-      const pelSel = document.getElementById('materialSelect');
-      const briSel = document.getElementById('briquetteSelect');
-      const pelTitle = document.getElementById('chartTitle');
-      const briTitle = document.getElementById('briquetteChartTitle');
-
-      const update = () => {
-        if (pelTitle && locSel && pelSel) {
-          pelTitle.textContent = `Pellet Price Trend – ${locSel.value} · ${pelSel.value}`;
-        }
-        if (briTitle && locSel && briSel) {
-          briTitle.textContent = `Briquette Price Trend – ${locSel.value} · ${briSel.value}`;
-        }
-      };
-      ['change','input'].forEach(ev => {
-        locSel?.addEventListener(ev, update);
-        pelSel?.addEventListener(ev, update);
-        briSel?.addEventListener(ev, update);
-      });
-      setTimeout(update, 800); // after first render
-    }
-    document.addEventListener('DOMContentLoaded', wireDynamicTitles);
-  </script>
 </body>
 </html>
