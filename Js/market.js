@@ -1,342 +1,419 @@
-// ===== CONFIG =====
-const API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
+// =========================
+// CONFIG
+// =========================
+// Use your Google Sheet (SheetBest) endpoint for the market data.
+// If it's same as Home, you can reuse it. Otherwise replace below:
+const MARKET_API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
 
-// ===== STATE =====
+// Expected columns (case-insensitive safe):
+// State, District (optional), Cluster (optional), Type ("Pellet"/"Briquette"),
+// Material (optional), Price, Week, Month, "6 Month" or "6mo", Year,
+// LastDeal (optional), UpdatedAt (optional), Supplier, Rating (optional),
+// CertURL (optional), CertDate (optional).
+
 let rows = [];
-let rowsByLocation = {};
-let pelletTypes = new Set();
-let briqTypes = new Set();
+let charts = { pellet: null, briq: null };
 
-let pelletChart, briqChart;
+const $ = (id) => document.getElementById(id);
 
-// ===== HELPERS =====
-const fmtIN = (n) => (isFinite(+n) ? Number(n).toLocaleString("en-IN") : "--");
-const nowStamp = () => new Date().toLocaleString("en-IN");
+const toNum = (v) => {
+  if (v === null || v === undefined) return 0;
+  const s = String(v).replace(/[,₹\s]/g, "");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+};
+const fmt = (n) => Number(n).toLocaleString("en-IN");
 
-// Robust column getter (handles minor header variations)
-const get = (obj, key) => {
-  if (!obj) return undefined;
-  const keys = Object.keys(obj);
-  const found = keys.find(k => k.trim().toLowerCase() === key.trim().toLowerCase());
-  return found ? obj[found] : undefined;
+// Try to read value from alternative header names
+const col = (r, ...names) => {
+  for (const name of names) {
+    if (r[name] !== undefined && r[name] !== "") return r[name];
+  }
+  return undefined;
 };
 
-// time-series values (Year, 6 Month(s), Month, Week)
-function extractSeries(row) {
-  const Y  = parseInt(get(row, "Year"))   || 0;
-  const M6 = parseInt(get(row, "6 Month")) || parseInt(get(row, "6 Months")) || parseInt(get(row, "6mo")) || 0;
-  const M  = parseInt(get(row, "Month"))  || 0;
-  const W  = parseInt(get(row, "Week"))   || 0;
-  return { Y, M6, M, W };
+async function load() {
+  try {
+    const res = await fetch(MARKET_API_URL);
+    rows = await res.json();
+
+    buildLocationSelect();
+    buildMaterialSelects();
+    bindFreightCalc();
+    computeIndex();
+    computeAlerts();
+
+    // Defaults
+    const defaultState = findAvailableDefault("AVERAGE");
+    $("locationSelect").value = defaultState;
+    updateAll(defaultState);
+
+    // Events
+    $("locationSelect").addEventListener("change", () => {
+      updateAll($("locationSelect").value);
+    });
+    $("materialSelect").addEventListener("change", () => {
+      updatePelletChart($("locationSelect").value);
+    });
+    $("briquetteSelect").addEventListener("change", () => {
+      updateBriquetteChart($("locationSelect").value);
+    });
+
+    // Optional sections
+    buildSuppliers();
+    buildCertificates();
+
+  } catch (e) {
+    console.error("Market load failed:", e);
+  }
 }
 
-// naive confidence (more filled fields => higher confidence)
-function confidenceFor(rows) {
-  if (!rows || !rows.length) return 0;
-  let filled = 0, total = 0;
-  rows.forEach(r => {
-    const s = extractSeries(r);
-    [s.Y, s.M6, s.M, s.W].forEach(v => { total++; if (v > 0) filled++; });
-  });
-  return Math.round((filled / Math.max(total,1)) * 100);
+function findAvailableDefault(preferred) {
+  const states = Array.from(
+    new Set(rows.map(r => (r.State || "").trim()).filter(Boolean))
+  );
+  if (states.includes(preferred)) return preferred;
+  return states[0] || "AVERAGE";
 }
 
-// simple 7-day micro forecast (weighted blend of M and W deltas)
-function microForecast(activeRows) {
-  if (!activeRows || !activeRows.length) return "Forecast unavailable.";
-  const pts = activeRows.map(r => {
-    const s = extractSeries(r);
-    // approximate next week = week + 30%*(month-week)
-    const nextW = Math.round(s.W + 0.3 * (s.M - s.W));
-    return { type: get(r, "Type"), next: nextW, curr: s.W };
-  });
-  const pellet = pts.find(p => (p.type || "").toLowerCase().includes("pellet"));
-  const briq   = pts.find(p => (p.type || "").toLowerCase().includes("briq"));
-  const pelletTxt = pellet ? `Pellet next week ~ ₹${fmtIN(pellet.next)}/t (${pellet.next >= pellet.curr ? "↑" : "↓"})` : "";
-  const briqTxt   = briq   ? `Briquette next week ~ ₹${fmtIN(briq.next)}/t (${briq.next >= briq.curr ? "↑" : "↓"})` : "";
-  return [pelletTxt, briqTxt].filter(Boolean).join(" • ");
-}
-
-// seasonal note (very simple signal by month)
-function seasonalNote(state) {
-  const m = new Date().getMonth(); // 0-11
-  const riceStates = ["punjab","haryana","up","uttar pradesh","bihar","wb","west bengal"];
-  const isRiceRegion = riceStates.some(s => (state||"").toLowerCase().includes(s));
-  if (isRiceRegion && (m >= 9 && m <= 11)) return "Rice harvest drives husk supply; pellet prices may soften.";
-  if (m >= 3 && m <= 5) return "Pre‑monsoon logistics tightness can nudge freight up.";
-  return "Normal seasonal conditions.";
-}
-
-// ===== RENDER =====
-function fillSelect(selectEl, values) {
-  selectEl.innerHTML = "";
-  values.forEach(v => {
+function buildLocationSelect() {
+  const sel = $("locationSelect");
+  sel.innerHTML = "";
+  const states = Array.from(
+    new Set(rows.map(r => (r.State || "").trim()).filter(Boolean))
+  ).sort((a,b) => a.localeCompare(b));
+  states.forEach(s => {
     const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    selectEl.appendChild(opt);
+    opt.value = s;
+    opt.textContent = s;
+    sel.appendChild(opt);
   });
 }
 
-function buildTables(loc) {
-  const matT = document.getElementById("materialTable");
-  const briT = document.getElementById("briquetteTable");
-  matT.innerHTML = "";
-  briT.innerHTML = "";
+function buildMaterialSelects() {
+  const pelletMats = Array.from(
+    new Set(rows.filter(r => String(r.Type).toLowerCase() === "pellet")
+      .map(r => (r.Material || "Pellet").trim()))
+  ).sort();
 
-  const hdr = `
-    <thead><tr>
-      <th>Type</th><th>Week</th><th>Month</th><th>6 Months</th><th>Year</th>
-    </tr></thead><tbody>`;
+  const briqMats = Array.from(
+    new Set(rows.filter(r => String(r.Type).toLowerCase() === "briquette")
+      .map(r => (r.Material || "Briquette").trim()))
+  ).sort();
 
-  const rowsHere = rowsByLocation[loc] || [];
-  const pellets = rowsHere.filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet"));
-  const briqs   = rowsHere.filter(r => (get(r,"Type")||"").toLowerCase().includes("briq"));
+  const ms = $("materialSelect");
+  ms.innerHTML = "";
+  pelletMats.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    ms.appendChild(opt);
+  });
 
-  const trs = (arr) => arr.map(r => {
-    const s = extractSeries(r);
-    return `<tr>
-      <td>${get(r,"Type")||"--"}</td>
-      <td>₹${fmtIN(s.W)}</td>
-      <td>₹${fmtIN(s.M)}</td>
-      <td>₹${fmtIN(s.M6)}</td>
-      <td>₹${fmtIN(s.Y)}</td>
-    </tr>`;
-  }).join("");
-
-  matT.innerHTML = hdr + trs(pellets) + "</tbody>";
-  briT.innerHTML = hdr + trs(briqs) + "</tbody>";
+  const bs = $("briquetteSelect");
+  bs.innerHTML = "";
+  briqMats.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    bs.appendChild(opt);
+  });
 }
 
-function renderSnapshot(loc) {
-  const here = rowsByLocation[loc] || [];
-  const pel = here.filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet"));
-  const bri = here.filter(r => (get(r,"Type")||"").toLowerCase().includes("briq"));
-
-  // Averages
-  const avg = (arr, pick) => {
-    const vals = arr.map(pick).filter(v => isFinite(+v));
-    if (!vals.length) return 0;
-    return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
-    };
-  const pAvg = avg(pel, r => extractSeries(r).W);
-  const bAvg = avg(bri, r => extractSeries(r).W);
-
-  // "Last deal" = using Week column as proxy
-  const pLast = Math.max(...pel.map(r => extractSeries(r).W).filter(v=>v>0), 0);
-  const bLast = Math.max(...bri.map(r => extractSeries(r).W).filter(v=>v>0), 0);
-
-  document.getElementById("kpiPelletAvg").textContent = fmtIN(pAvg);
-  document.getElementById("kpiPelletLast").textContent = `Last deal: ₹${fmtIN(pLast)}/t`;
-  document.getElementById("kpiBriqAvg").textContent = fmtIN(bAvg);
-  document.getElementById("kpiBriqLast").textContent = `Last deal: ₹${fmtIN(bLast)}/t`;
-  document.getElementById("lastUpdated").textContent = `Updated: ${nowStamp()}`;
-
-  // Confidence
-  const conf = confidenceFor(here);
-  const bar = document.getElementById("confidenceBar");
-  const txt = document.getElementById("confidenceText");
-  bar.style.width = `${conf}%`;
-  bar.dataset.level = conf >= 70 ? "high" : conf >= 40 ? "mid" : "low";
-  txt.textContent = `${conf}%`;
-
-  // Signals: Best Buy / Best Sell (relative vs national avg)
-  const signals = document.getElementById("bestSignals");
-  signals.innerHTML = "";
-  const natPelAvg = Math.round(avg(rows.filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet")), r=>extractSeries(r).W));
-  const natBriAvg = Math.round(avg(rows.filter(r => (get(r,"Type")||"").toLowerCase().includes("briq")),   r=>extractSeries(r).W));
-  const delta = (v, base) => (isFinite(+v) && isFinite(+base)) ? Math.round(((v-base)/base)*100) : 0;
-  const pelDelta = delta(pAvg, natPelAvg);
-  const briDelta = delta(bAvg, natBriAvg);
-
-  const liPel = document.createElement("li");
-  liPel.textContent = pelDelta < 0 ? `Best Buy: Pellet here is ${Math.abs(pelDelta)}% below national avg.` :
-                                   `Best Sell: Pellet here is ${pelDelta}% above national avg.`;
-  const liBri = document.createElement("li");
-  liBri.textContent = briDelta < 0 ? `Best Buy: Briquette here is ${Math.abs(briDelta)}% below national avg.` :
-                                    `Best Sell: Briquette here is ${briDelta}% above national avg.`;
-  signals.append(liPel, liBri);
-
-  // Forecast & seasonal notes
-  document.getElementById("forecastNote").textContent = microForecast(here);
-  document.getElementById("seasonalNote").textContent = seasonalNote(loc);
+function updateAll(state) {
+  updateLiveKpis(state);
+  buildTables(state);
+  updatePelletChart(state);
+  updateBriquetteChart(state);
 }
 
-function buildSelectors(loc) {
-  const here = rowsByLocation[loc] || [];
-  const mSel = document.getElementById("materialSelect");
-  const bSel = document.getElementById("briquetteSelect");
-
-  const mVals = [...new Set(here.filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet"))
-                      .map(r => get(r,"Type")).filter(Boolean))];
-  const bVals = [...new Set(here.filter(r => (get(r,"Type")||"").toLowerCase().includes("briq"))
-                      .map(r => get(r,"Type")).filter(Boolean))];
-
-  fillSelect(mSel, mVals);
-  fillSelect(bSel, bVals);
+function selectRows(state, type) {
+  return rows.filter(r =>
+    String(r.State || "").trim() === state &&
+    String(r.Type || "").toLowerCase() === type
+  );
 }
 
-function drawCharts(loc) {
-  const labels = ["Year","6 Months","Month","Week"];
-  const ctxP = document.getElementById("priceChart").getContext("2d");
-  const ctxB = document.getElementById("briquetteChart").getContext("2d");
+function latestNumbers(row) {
+  // Returns timeline in order: Year, 6mo, Month, Week
+  const yr = toNum(col(row, "Year", "year"));
+  const six = toNum(col(row, "6 Month", "6month", "6mo", "SixMonth"));
+  const mon = toNum(col(row, "Month", "month"));
+  const wk = toNum(col(row, "Week", "week"));
+  return [yr, six, mon, wk];
+}
 
-  const pType = document.getElementById("materialSelect").value;
-  const bType = document.getElementById("briquetteSelect").value;
+function updateLiveKpis(state) {
+  const pelletRow = selectRows(state, "pellet")[0];
+  const briqRow   = selectRows(state, "briquette")[0];
 
-  const pRow = (rowsByLocation[loc] || []).find(r => get(r,"Type") === pType);
-  const bRow = (rowsByLocation[loc] || []).find(r => get(r,"Type") === bType);
+  const pelletPrice = pelletRow ? toNum(col(pelletRow, "Price")) : 0;
+  const briqPrice   = briqRow   ? toNum(col(briqRow, "Price"))   : 0;
 
-  const pS = extractSeries(pRow || {});
-  const bS = extractSeries(bRow || {});
+  $("pelletPriceLive").textContent    = pelletPrice ? fmt(pelletPrice) : "--";
+  $("briquettePriceLive").textContent = briqPrice   ? fmt(briqPrice)   : "--";
 
-  const pData = [pS.Y, pS.M6, pS.M, pS.W];
-  const bData = [bS.Y, bS.M6, bS.M, bS.W];
+  $("pelletLastDeal").textContent    = pelletRow ? fmt(toNum(col(pelletRow, "LastDeal", "Last Deal"))) : "--";
+  $("briquetteLastDeal").textContent = briqRow   ? fmt(toNum(col(briqRow, "LastDeal", "Last Deal")))   : "--";
 
-  if (pelletChart) pelletChart.destroy();
-  if (briqChart) briqChart.destroy();
+  // Trend vs last month
+  const [ , , monP, wkP ] = pelletRow ? latestNumbers(pelletRow) : [0,0,0,0];
+  const [ , , monB, wkB ] = briqRow   ? latestNumbers(briqRow)   : [0,0,0,0];
 
-  const baseOptions = (min, max) => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    elements: { line: { tension: 0.3, borderWidth: 2 }, point: { radius: 3 } },
-    scales: {
-      y: {
-        suggestedMin: Math.floor(min * 0.95),
-        suggestedMax: Math.ceil(max * 1.05),
-        ticks: { callback: v => `₹${Number(v).toLocaleString("en-IN")}` }
-      }
+  setTrend("pelletTrend", wkP, monP);
+  setTrend("briquetteTrend", wkB, monB);
+
+  // Confidence = coverage % (rows in state vs total materials*2)
+  const materialsCount = new Set(rows.map(r => `${r.State}-${r.Type}`)).size;
+  const stateCount = rows.filter(r => String(r.State).trim() === state).length;
+  const conf = Math.max(10, Math.min(100, Math.round((stateCount / Math.max(1, materialsCount)) * 100)));
+  $("confidenceText").textContent = `${conf}%`;
+  $("confidenceFill").style.width = `${conf}%`;
+  $("lastUpdated").textContent = pelletRow?.UpdatedAt || briqRow?.UpdatedAt || new Date().toLocaleDateString("en-IN");
+
+}
+
+function setTrend(id, now, prev) {
+  const el = $(id);
+  const diff = now - prev;
+  if (!now || !prev) {
+    el.textContent = "—";
+    el.className = "trend neutral";
+    return;
+  }
+  const pct = (diff / prev) * 100;
+  el.textContent = `${diff > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
+  el.className = `trend ${diff > 0 ? "up" : "down"}`;
+}
+
+function buildTables(state) {
+  // Pellet table
+  const pelletRows = rows.filter(r =>
+    String(r.State || "").trim() === state &&
+    String(r.Type || "").toLowerCase() === "pellet"
+  );
+
+  const briqRows = rows.filter(r =>
+    String(r.State || "").trim() === state &&
+    String(r.Type || "").toLowerCase() === "briquette"
+  );
+
+  const build = (data) => {
+    if (!data.length) return "<tr><td>No data</td></tr>";
+    const headers = ["Material", "Price", "Week", "Month", "6 Month", "Year"];
+    const th = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+    const trs = data.map(r => {
+      const material = (r.Material || (r.Type || "")).toString();
+      const [yr, six, mon, wk] = latestNumbers(r);
+      const price = toNum(r.Price) || wk || mon || six || yr || 0;
+      return `<tr>
+        <td>${material}</td>
+        <td>₹${fmt(price)}</td>
+        <td>${wk ? `₹${fmt(wk)}` : "—"}</td>
+        <td>${mon ? `₹${fmt(mon)}` : "—"}</td>
+        <td>${six ? `₹${fmt(six)}` : "—"}</td>
+        <td>${yr ? `₹${fmt(yr)}` : "—"}</td>
+      </tr>`;
+    }).join("");
+    return th + trs;
+  };
+
+  $("materialTable").innerHTML = build(pelletRows);
+  $("briquetteTable").innerHTML = build(briqRows);
+}
+
+function updatePelletChart(state) {
+  const mat = $("materialSelect").value;
+  const row = rows.find(r =>
+    String(r.State || "").trim() === state &&
+    String(r.Type || "").toLowerCase() === "pellet" &&
+    String(r.Material || "Pellet").trim() === mat
+  );
+  drawLineChart("priceChart", "pellet", row, "pelletTimestamp", "pelletForecast");
+}
+
+function updateBriquetteChart(state) {
+  const mat = $("briquetteSelect").value;
+  const row = rows.find(r =>
+    String(r.State || "").trim() === state &&
+    String(r.Type || "").toLowerCase() === "briquette" &&
+    String(r.Material || "Briquette").trim() === mat
+  );
+  drawLineChart("briquetteChart", "briq", row, "briquetteTimestamp", "briquetteForecast");
+}
+
+function drawLineChart(canvasId, key, row, tsId, fcId) {
+  if (charts[key]) charts[key].destroy();
+
+  const labels = ["Year", "6 Months", "Month", "Week"];
+  const [yr, six, mon, wk] = row ? latestNumbers(row) : [0,0,0,0];
+  const data = [yr, six, mon, wk];
+
+  const ctx = $(canvasId).getContext("2d");
+  charts[key] = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "₹/ton",
+        data,
+        borderColor: key === "pellet" ? "#1C3D5A" : "#FFA500",
+        backgroundColor: "transparent",
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3
+      }]
     },
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => `₹${ctx.parsed.y.toLocaleString("en-IN")}/ton` } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          ticks: {
+            callback: v => `₹${Number(v).toLocaleString("en-IN")}`
+          }
+        }
+      },
+      plugins: { legend: { display: false } }
     }
   });
 
-  const minP = Math.min(...pData.filter(v=>v>0), 0);
-  const maxP = Math.max(...pData, 0);
-  const minB = Math.min(...bData.filter(v=>v>0), 0);
-  const maxB = Math.max(...bData, 0);
+  // Timestamp
+  $(tsId).textContent = row?.UpdatedAt || new Date().toLocaleDateString("en-IN");
 
-  pelletChart = new Chart(ctxP, {
-    type: "line",
-    data: { labels, datasets: [{ label: "Pellet", data: pData, borderColor: "#1C3D5A", backgroundColor: "#DDEAF4" }] },
-    options: baseOptions(minP, maxP)
-  });
-
-  briqChart = new Chart(ctxB, {
-    type: "line",
-    data: { labels, datasets: [{ label: "Briquette", data: bData, borderColor: "#FFA500", backgroundColor: "#FFEFD5" }] },
-    options: baseOptions(minB, maxB)
-  });
-
-  document.getElementById("pelletTimestamp").textContent = nowStamp();
-  document.getElementById("briquetteTimestamp").textContent = nowStamp();
-
-  document.getElementById("chartTitle").textContent = `Pellet Price Trend — ${pType || "—"}`;
-  document.getElementById("briquetteChartTitle").textContent = `Briquette Price Trend — ${bType || "—"}`;
+  // 7‑day forecast (simple slope from Month->Week)
+  const slope = (wk && mon) ? (wk - mon) / 30 : 0;
+  const day7 = wk ? Math.round(wk + slope * 7) : 0;
+  $(fcId).textContent = day7 ? `₹${fmt(day7)}` : "—";
 }
 
-// ===== FREIGHT / LANDED COST =====
-const FREIGHT_RATE_PER_TKM = 3.5; // ₹ per ton per km (industry avg placeholder)
+function computeIndex() {
+  // Peltra Biomass Index = weighted avg of current Week (or Price) across all rows
+  const values = rows.map(r => {
+    const [ , , mon, wk] = latestNumbers(r);
+    return wk || toNum(r.Price) || mon || 0;
+  }).filter(v => v > 0);
 
-function calcLanded(loc) {
-  const here = rowsByLocation[loc] || [];
-  const pAvg = Math.round(here
-    .filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet"))
-    .map(r => extractSeries(r).W).filter(v=>v>0)
-    .reduce((a,b)=>a+b,0) / Math.max(1, here.filter(r => (get(r,"Type")||"").toLowerCase().includes("pellet")).length));
+  if (!values.length) return;
+  const avg = Math.round(values.reduce((a,b) => a+b, 0) / values.length);
+  $("peltraIndex").textContent = fmt(avg);
 
-  const bAvg = Math.round(here
-    .filter(r => (get(r,"Type")||"").toLowerCase().includes("briq"))
-    .map(r => extractSeries(r).W).filter(v=>v>0)
-    .reduce((a,b)=>a+b,0) / Math.max(1, here.filter(r => (get(r,"Type")||"").toLowerCase().includes("briq")).length));
+  // Delta vs previous (Month)
+  const months = rows.map(r => {
+    const [ , , mon ] = latestNumbers(r);
+    return mon || 0;
+  }).filter(v => v > 0);
 
-  return { pelletAvg: isFinite(pAvg)?pAvg:0, briqAvg: isFinite(bAvg)?bAvg:0 };
+  if (!months.length) {
+    $("peltraIndexDelta").textContent = "—";
+    $("peltraIndexDelta").className = "trend neutral";
+    return;
+  }
+  const mAvg = Math.round(months.reduce((a,b)=>a+b,0) / months.length);
+  const diff = avg - mAvg;
+  const pct = mAvg ? (diff / mAvg) * 100 : 0;
+  $("peltraIndexDelta").textContent = `${diff >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(1)}%`;
+  $("peltraIndexDelta").className = `trend ${diff >= 0 ? "up" : "down"}`;
 }
 
-function bindFreight(loc) {
-  const form = document.getElementById("freightForm");
-  const out = document.getElementById("freightResult");
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const km = parseFloat(document.getElementById("freightDistance").value);
-    const tons = parseFloat(document.getElementById("freightTons").value);
-    const kind = document.getElementById("freightFuelKind").value;
+function computeAlerts() {
+  // Best Buy = min pellet Week/Price; Best Sell = max briquette Week/Price
+  const pellets = rows.filter(r => String(r.Type).toLowerCase() === "pellet")
+    .map(r => ({ state: (r.State||"").trim(), price: currentPrice(r) }))
+    .filter(x => x.state && x.price > 0);
+  const briqs = rows.filter(r => String(r.Type).toLowerCase() === "briquette")
+    .map(r => ({ state: (r.State||"").trim(), price: currentPrice(r) }))
+    .filter(x => x.state && x.price > 0);
 
-    if (!isFinite(km) || !isFinite(tons) || km <= 0 || tons <= 0) {
-      out.textContent = "Please enter valid distance and quantity.";
+  if (pellets.length) {
+    const bestBuy = pellets.reduce((a,b)=> a.price < b.price ? a : b);
+    $("bestBuyPrice").textContent = fmt(bestBuy.price);
+    $("bestBuyState").textContent = bestBuy.state;
+  }
+  if (briqs.length) {
+    const bestSell = briqs.reduce((a,b)=> a.price > b.price ? a : b);
+    $("bestSellPrice").textContent = fmt(bestSell.price);
+    $("bestSellState").textContent = bestSell.state;
+  }
+
+  $("ctaBestBuy").addEventListener("click", () => alert("Rate lock request sent to Peltra."));
+  $("ctaBestSell").addEventListener("click", () => alert("Sell request sent to Peltra."));
+}
+
+function currentPrice(r) {
+  const [ , , mon, wk ] = latestNumbers(r);
+  return toNum(r.Price) || wk || mon || 0;
+}
+
+function bindFreightCalc() {
+  $("fcCalc").addEventListener("click", () => {
+    const km = toNum($("fcDistance").value);
+    const tons = toNum($("fcTonnage").value);
+    const rate = toNum($("fcRate").value);
+    if (!km || !tons || !rate) {
+      $("fcResult").textContent = "0";
       return;
     }
-
-    const { pelletAvg, briqAvg } = calcLanded(loc);
-    const base = kind === "pellet" ? pelletAvg : briqAvg;
-    if (!base) {
-      out.textContent = "Base price unavailable for this location.";
-      return;
-    }
-
-    const freight = Math.round(km * tons * FREIGHT_RATE_PER_TKM);
-    const landedPerTon = Math.round(base + (freight / tons));
-
-    out.innerHTML = `
-      Base: ₹${fmtIN(base)}/t • Freight: ₹${fmtIN(freight)} •
-      <strong>Landed ≈ ₹${fmtIN(landedPerTon)}/t</strong>`;
+    // Simple: truck runs per km * rate (assumes full-truck cost spread by load)
+    const total = Math.round(km * rate);
+    $("fcResult").textContent = fmt(total);
   });
 }
 
-// ===== MAIN FLOW =====
-async function init() {
-  const res = await fetch(API_URL);
-  rows = await res.json();
+function buildSuppliers() {
+  // If your sheet has Supplier / State / Rating columns, show a table
+  const suppliers = rows
+    .map(r => ({
+      supplier: (r.Supplier || "").trim(),
+      state: (r.State || "").trim(),
+      rating: (r.Rating || "").toString().trim()
+    }))
+    .filter(s => s.supplier && s.state);
 
-  // Index by location (State)
-  rowsByLocation = {};
-  rows.forEach(r => {
-    const st = (get(r,"State") || "AVERAGE").trim();
-    rowsByLocation[st] = rowsByLocation[st] || [];
-    rowsByLocation[st].push(r);
-    const t = (get(r,"Type") || "").toLowerCase();
-    if (t.includes("pellet")) pelletTypes.add(get(r,"Type"));
-    if (t.includes("briq"))   briqTypes.add(get(r,"Type"));
-  });
+  if (!suppliers.length) return;
 
-  // Build location list (AVERAGE first if present)
-  const locations = Object.keys(rowsByLocation).sort((a,b) => a.localeCompare(b));
-  const idxAverage = locations.indexOf("AVERAGE");
-  if (idxAverage > 0) { locations.splice(idxAverage,1); locations.unshift("AVERAGE"); }
-
-  // Populate selects
-  const locSel = document.getElementById("locationSelect");
-  fillSelect(locSel, locations);
-
-  // Set defaults
-  const defaultLoc = "AVERAGE";
-  locSel.value = locations.includes(defaultLoc) ? defaultLoc : locations[0];
-
-  buildSelectors(locSel.value);
-  buildTables(locSel.value);
-  renderSnapshot(locSel.value);
-  drawCharts(locSel.value);
-  bindFreight(locSel.value);
-
-  // events
-  locSel.addEventListener("change", () => {
-    buildSelectors(locSel.value);
-    buildTables(locSel.value);
-    renderSnapshot(locSel.value);
-    drawCharts(locSel.value);
-    // rebind freight with new location baseline
-    document.getElementById("freightForm").replaceWith(document.getElementById("freightForm").cloneNode(true));
-    bindFreight(locSel.value);
-  });
-  document.getElementById("materialSelect").addEventListener("change", () => drawCharts(locSel.value));
-  document.getElementById("briquetteSelect").addEventListener("change", () => drawCharts(locSel.value));
+  const table = $("supplierTable");
+  table.innerHTML = `
+    <tr><th>Supplier</th><th>State</th><th>Credibility</th></tr>
+    ${suppliers.slice(0, 50).map(s => `
+      <tr>
+        <td>${s.supplier}</td>
+        <td>${s.state}</td>
+        <td>${s.rating || "—"}</td>
+      </tr>
+    `).join("")}
+  `;
+  $("supplierSection").hidden = false;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  init().catch(err => {
-    console.error("Market init error", err);
-    alert("Failed to load market data. Please retry.");
-  });
-});
+function buildCertificates() {
+  // If your sheet has CertURL / CertDate / State / Type / Material, list recent certs
+  const certs = rows
+    .map(r => ({
+      url: (r.CertURL || r.Certificate || "").trim(),
+      date: (r.CertDate || "").trim(),
+      state: (r.State || "").trim(),
+      type: (r.Type || "").trim(),
+      material: (r.Material || "").trim()
+    }))
+    .filter(c => c.url);
+
+  if (!certs.length) return;
+
+  const table = $("certTable");
+  table.innerHTML = `
+    <tr><th>Date</th><th>State</th><th>Type</th><th>Material</th><th>Certificate</th></tr>
+    ${certs.slice(0, 50).map(c => `
+      <tr>
+        <td>${c.date || "—"}</td>
+        <td>${c.state || "—"}</td>
+        <td>${c.type || "—"}</td>
+        <td>${c.material || "—"}</td>
+        <td><a href="${c.url}" target="_blank" rel="noopener">View</a></td>
+      </tr>
+    `).join("")}
+  `;
+  $("certSection").hidden = false;
+}
+
+document.addEventListener("DOMContentLoaded", load);
