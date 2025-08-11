@@ -3,152 +3,181 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Market Prices • Peltra</title>
-  <link rel="stylesheet" href="style/market.css">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+
+  <title>Biomass Market Prices – Pellets & Briquettes | EverythingPellets</title>
+  <meta name="description" content="Live biomass fuel prices across India. Compare 8mm pellet and 90mm briquette rates, view trends, specs, and compute freight.">
+
+  <!-- Canonical (optional) -->
+  <!-- <link rel="canonical" href="https://everythingpellets.com/marketprice.html" /> -->
+
+  <!-- Open Graph (optional) -->
+  <meta property="og:title" content="Live Biomass Pellet & Briquette Prices in India – EverythingPellets">
+  <meta property="og:description" content="Compare prices by state and material. See trends, specs and seasonal notes.">
+  <meta property="og:image" content="assets/preview.jpg">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="stylesheet" href="style/market.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="sticky-header">
     <div class="market-logo-container">
-      <img src="assets/Logo.png" alt="Peltra Logo" class="market-logo" />
+      <img src="assets/Logo.png" alt="EverythingPellets Logo" class="market-logo" />
     </div>
     <h1>Market Prices</h1>
-    <p class="subhead">Hyper‑local pellet & briquette intelligence</p>
+    <p>Live Pellet & Briquette Price Intelligence by Location</p>
   </header>
 
-  <!-- Nav -->
+  <!-- NAV -->
   <nav class="sticky-nav">
     <a href="index.html">Home</a>
-    <a class="active" href="market.html">Market Prices</a>
+    <a href="marketprice.html">Market Prices</a>
     <a href="news.html">News</a>
     <a href="contact.html">Contact</a>
   </nav>
 
   <main>
-    <!-- Top controls + status -->
-    <section class="bar">
-      <div class="control">
-        <label for="locationSelect">Location</label>
-        <select id="locationSelect"></select>
+    <!-- STATUS ROW: confidence + last updated + seasonal -->
+    <section class="section" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div>
+        <span id="confidenceBadge" class="badge" style="padding:8px 12px;border-radius:999px;background:#e8f5e9;color:#1b5e20;font-weight:600;">Confidence: —</span>
       </div>
+      <div id="lastUpdated" class="last-updated">Last updated: --</div>
+      <div id="seasonalText" style="font-size:0.95rem;color:#1C3D5A;">Seasonal note will appear here.</div>
+    </section>
 
-      <div class="status">
-        <span id="confidenceBadge" class="badge">Confidence: --</span>
-        <span id="lastUpdated" class="muted">Last updated: --</span>
+    <!-- BEST DEALS -->
+    <section class="section" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
+      <div style="background:#fff;border:1px solid #D3E3EC;border-radius:12px;padding:1rem;">
+        <h3 style="margin:0 0 .5rem;">Best Buy (Lowest ₹)</h3>
+        <div style="font-size:1.6rem;font-weight:700;">₹<span id="bestBuyPrice">--</span></div>
+        <div style="color:#555;margin-top:.25rem;">Location: <strong id="bestBuyWhere">—</strong></div>
+      </div>
+      <div style="background:#fff;border:1px solid #D3E3EC;border-radius:12px;padding:1rem;">
+        <h3 style="margin:0 0 .5rem;">Best Sell (Highest ₹)</h3>
+        <div style="font-size:1.6rem;font-weight:700;">₹<span id="bestSellPrice">--</span></div>
+        <div style="color:#555;margin-top:.25rem;">Location: <strong id="bestSellWhere">—</strong></div>
       </div>
     </section>
 
-    <!-- Big numbers -->
-    <section class="cards">
-      <div class="kpi">
-        <div class="kpi-title">Pellet Price</div>
-        <div class="kpi-value">₹<span id="pelletPrice">--</span>/ton</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-title">Briquette Price</div>
-        <div class="kpi-value">₹<span id="briquettePrice">--</span>/ton</div>
-      </div>
-      <div class="kpi soft">
-        <div class="kpi-title">Today’s Best Buy (India)</div>
-        <div class="kpi-value sm">
-          ₹<span id="bestBuyPrice">--</span>/ton
-          <span class="pill" id="bestBuyWhere">--</span>
-        </div>
-      </div>
-      <div class="kpi soft">
-        <div class="kpi-title">Today’s Best Sell (India)</div>
-        <div class="kpi-value sm">
-          ₹<span id="bestSellPrice">--</span>/ton
-          <span class="pill warn" id="bestSellWhere">--</span>
-        </div>
-      </div>
+    <!-- LOCATION SELECT -->
+    <section class="section">
+      <label for="locationSelect"><strong>Select Location:</strong></label>
+      <select id="locationSelect" class="styled-dropdown"></select>
     </section>
 
-    <!-- Material selectors + charts -->
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Pellet Price Trend</h3>
-        <div class="selectors">
-          <label for="pelletMaterialSelect">Pellet type</label>
-          <select id="pelletMaterialSelect"></select>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="pelletChart"></canvas>
-      </div>
-      <p class="muted" id="pelletTimestamp">—</p>
+    <hr/>
+
+    <!-- PELLET TABLE -->
+    <section class="section">
+      <h3>Pellet Prices (₹/ton) (8mm)</h3>
+      <table id="materialTable" class="hover-table"></table>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Briquette Price Trend</h3>
-        <div class="selectors">
-          <label for="briquetteMaterialSelect">Briquette type</label>
-          <select id="briquetteMaterialSelect"></select>
-        </div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="briquetteChart"></canvas>
-      </div>
-      <p class="muted" id="briquetteTimestamp">—</p>
+    <hr/>
+
+    <!-- BRIQUETTE TABLE -->
+    <section class="section">
+      <h3>Briquette Prices (₹/ton) (90mm)</h3>
+      <table id="briquetteTable" class="hover-table"></table>
     </section>
 
-    <!-- Seasonal impact -->
-    <section class="stripe" id="seasonalBanner">
-      <strong>Seasonal Impact:</strong> <span id="seasonalText">—</span>
+    <hr/>
+
+    <!-- PELLET CHART + SPECS -->
+    <section class="section graph-box">
+      <label for="materialSelect"><strong>Select Pellet Type for Price Trend:</strong></label>
+      <select id="materialSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="pelletSpecs">
+        <p><strong>Ash:</strong> <span id="pelletAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="pelletMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="pelletKcal">--</span></p>
+      </div>
+
+      <h3 id="chartTitle">Pellet Price Trend (8mm)</h3>
+      <canvas id="priceChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: <span id="pelletTimestamp">--</span></p>
     </section>
 
-    <!-- Freight calculator -->
-    <section class="panel">
-      <div class="panel-head">
-        <h3>Freight Calculator</h3>
-        <p class="muted">Estimate landed cost quickly (editable assumptions).</p>
+    <hr/>
+
+    <!-- BRIQUETTE CHART + SPECS -->
+    <section class="section graph-box">
+      <label for="briquetteSelect"><strong>Select Briquette Type for Price Trend:</strong></label>
+      <select id="briquetteSelect" class="styled-dropdown"></select>
+
+      <div class="specs" id="briquetteSpecs">
+        <p><strong>Ash:</strong> <span id="briquetteAsh">--</span></p>
+        <p><strong>Moisture:</strong> <span id="briquetteMoisture">--</span></p>
+        <p><strong>Kcal Value:</strong> <span id="briquetteKcal">--</span></p>
       </div>
-      <div class="grid-3">
-        <div class="control">
-          <label for="fcDistance">Distance (km)</label>
-          <input id="fcDistance" type="number" min="0" value="250" />
-        </div>
-        <div class="control">
-          <label for="fcTonnage">Load (tons)</label>
-          <input id="fcTonnage" type="number" min="1" value="20" />
-        </div>
-        <div class="control">
-          <label for="fcRate">Rate (₹/ton·km)</label>
-          <input id="fcRate" type="number" min="0" step="0.1" value="3.0" />
-        </div>
-      </div>
-      <div class="cards">
-        <div class="kpi">
-          <div class="kpi-title">Freight / ton</div>
-          <div class="kpi-value">₹<span id="fcPerTon">--</span></div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-title">Total Freight</div>
-          <div class="kpi-value">₹<span id="fcTotal">--</span></div>
-        </div>
-      </div>
+
+      <h3 id="briquetteChartTitle">Briquette Price Trend (90mm)</h3>
+      <canvas id="briquetteChart" width="400" height="200"></canvas>
+      <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span></p>
     </section>
 
-    <!-- CTAs -->
-    <section class="cta">
-      <h3>Lock today’s rate with Peltra Sourcing</h3>
-      <p class="muted">Match/beat best verified price. Priority dispatch in key clusters.</p>
-      <div class="cta-actions">
-        <a class="btn primary" href="https://wa.me/9910033481" target="_blank" rel="noopener">WhatsApp Us</a>
-        <a class="btn" href="tel:+919910033481">Call Now</a>
+    <hr/>
+
+    <!-- FREIGHT CALCULATOR -->
+    <section class="section">
+      <h3>Freight Calculator</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+        <div>
+          <label for="fcDistance"><strong>Distance (km)</strong></label>
+          <input id="fcDistance" type="number" min="0" step="1" placeholder="e.g., 250" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
+        </div>
+        <div>
+          <label for="fcTonnage"><strong>Tonnage (tons)</strong></label>
+          <input id="fcTonnage" type="number" min="0" step="1" placeholder="e.g., 20" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
+        </div>
+        <div>
+          <label for="fcRate"><strong>Rate (₹/ton/km)</strong></label>
+          <input id="fcRate" type="number" min="0" step="0.1" placeholder="e.g., 2.5" style="width:100%;padding:.6rem;border:1px solid #66A5AD;border-radius:8px;background:#fff;color:#1C3D5A;">
+        </div>
+      </div>
+      <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-top:1rem;">
+        <div>Per‑ton freight: <strong>₹<span id="fcPerTon">--</span></strong></div>
+        <div>Total freight: <strong>₹<span id="fcTotal">--</span></strong></div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>© 2025 Peltra • Building the biomass operating system</p>
+    <p>&copy; 2025 EverythingPellets. Made with sustainability in mind.</p>
   </footer>
 
+  <!-- JS: uses the Market sheet endpoint, preserves original logic + your new features -->
   <script src="js/market.js"></script>
+  <script>
+    // Optional: auto-update chart titles with location + material
+    function wireDynamicTitles() {
+      const locSel = document.getElementById('locationSelect');
+      const pelSel = document.getElementById('materialSelect');
+      const briSel = document.getElementById('briquetteSelect');
+      const pelTitle = document.getElementById('chartTitle');
+      const briTitle = document.getElementById('briquetteChartTitle');
+
+      const update = () => {
+        if (pelTitle && locSel && pelSel) {
+          pelTitle.textContent = `Pellet Price Trend – ${locSel.value} · ${pelSel.value}`;
+        }
+        if (briTitle && locSel && briSel) {
+          briTitle.textContent = `Briquette Price Trend – ${locSel.value} · ${briSel.value}`;
+        }
+      };
+      ['change','input'].forEach(ev => {
+        locSel?.addEventListener(ev, update);
+        pelSel?.addEventListener(ev, update);
+        briSel?.addEventListener(ev, update);
+      });
+      setTimeout(update, 800); // after first render
+    }
+    document.addEventListener('DOMContentLoaded', wireDynamicTitles);
+  </script>
 </body>
 </html>
-
