@@ -4,13 +4,17 @@ const API_URL = "https://api.sheetbest.com/sheets/ec0fea37-5ac0-45b5-a7c9-cda68f
 // ====== STATE ======
 let sheetData = [];
 let dataset = {};               // { [location]: { materials: { pellets: { [material]: {price, trend, raw}}, briquettes: {...} } } }
+let pelletLabels = new Set();
+let briquetteLabels = new Set();
 
 // ====== UTILS ======
 const fmtINR = (n) => (isNaN(n) || n == null) ? "--" : Number(n).toLocaleString("en-IN");
 const toNum  = (v) => v ? parseInt(String(v).replace(/,/g, ""), 10) : 0;
-const get6M  = (row) => toNum(row?.["6 Month"] ?? row?.["6 month"] ?? row?.["6month"] ?? row?.["6mo"] ?? row?.SixMonth ?? 0);
 
-// Confidence badge (optional)
+// Robust “6 Month” accessor
+const get6M = (row) => toNum(row?.["6 Month"] ?? row?.["6 month"] ?? row?.["6month"] ?? row?.["6mo"] ?? row?.SixMonth ?? 0);
+
+// Optional confidence badge (only if element exists)
 const confidenceFrom = (pelletRow, briqRow) => {
   let score = 0;
   [pelletRow, briqRow].forEach(r => {
@@ -19,7 +23,7 @@ const confidenceFrom = (pelletRow, briqRow) => {
     if (toNum(r.Year)) parts++;
     if (get6M(r)) parts++;
     if (toNum(r.Month)) parts++;
-    if (toNum(r.Week ?? r.Price)) parts++;
+    if (toNum(r.Week)) parts++;
     score += parts;
   });
   if (score >= 6) return { label: "High", cls: "ok" };
@@ -27,24 +31,26 @@ const confidenceFrom = (pelletRow, briqRow) => {
   return { label: "Low", cls: "low" };
 };
 
-// ====== DATA LOAD (robust to column/name variations) ======
+// ====== DATA LOAD ======
 async function loadData() {
   const res = await fetch(API_URL);
   sheetData = await res.json();
 
   dataset = {};
+  pelletLabels = new Set();
+  briquetteLabels = new Set();
 
   for (const raw of sheetData) {
-    // Normalize critical fields / tolerate cases
+    // Tolerant key access
     const State    = raw.State ?? raw.state ?? raw.STATE;
     const Type     = raw.Type ?? raw.type ?? raw.TYPE;
-    const Material = raw.Material ?? raw.material ?? raw.MATERIAL ?? "Standard";
+    const Material = raw.Material ?? raw.material ?? raw.MATERIAL;
     const Year     = raw.Year ?? raw.YEAR;
-    const SixM     = raw["6 Month"] ?? raw["6 month"] ?? raw["6month"] ?? raw["6mo"] ?? raw.SixMonth;
     const Month    = raw.Month ?? raw.MONTH;
-    const WeekLike = raw.Week ?? raw.WEEK ?? raw.week ?? raw.Price ?? raw.price; // use Price if Week missing
+    // Prefer Week; fall back to Price if a sheet uses that for current price
+    const Week     = raw.Week ?? raw.WEEK ?? raw.week ?? raw.Price ?? raw.price;
 
-    const location = (State || "").toString().trim();          // keep display case for UI
+    const location = (State || "").toString().trim();
     if (!location) continue;
 
     const type = (Type || "").toString().trim().toLowerCase();
@@ -56,19 +62,25 @@ async function loadData() {
       dataset[location] = { materials: { pellets: {}, briquettes: {} } };
     }
 
-    const price = toNum(WeekLike);
-    const trend = [ toNum(Year), toNum(SixM), toNum(Month), toNum(WeekLike) ];
-    const cell  = { price, trend, raw };
+    const price = toNum(Week);
+    const trend = [ toNum(Year), get6M(raw), toNum(Month), toNum(Week) ];
+    const formatted = { price, trend, raw };
 
     if (type === "pellet") {
-      dataset[location].materials.pellets[material] = cell;
+      dataset[location].materials.pellets[material] = formatted;
+      pelletLabels.add(material);
     } else {
-      dataset[location].materials.briquettes[material] = cell;
+      dataset[location].materials.briquettes[material] = formatted;
+      briquetteLabels.add(material);
     }
   }
+
+  // Hide GLOBAL from dropdowns
+  pelletLabels.delete("GLOBAL");
+  briquetteLabels.delete("GLOBAL");
 }
 
-// ====== DOM GETTERS (tolerant to id variants if you rename later) ======
+// ====== DOM GETTERS (tolerant to both id styles) ======
 const els = {
   locationSelect:     () => document.getElementById("locationSelect"),
   materialSelect:     () => document.getElementById("materialSelect") || document.getElementById("pelletMaterialSelect"),
@@ -95,7 +107,7 @@ const els = {
   fcPerTon:           () => document.getElementById("fcPerTon"),
 };
 
-// ====== TABLES ======
+// ====== TABLE RENDER ======
 function renderPelletTable(locationKey) {
   const table = els.materialTable();
   if (!table) return;
@@ -103,10 +115,8 @@ function renderPelletTable(locationKey) {
   table.innerHTML =
     `<tr><th>Pellet Type</th><th>Price (₹/ton)</th><th>Last 4 Trend</th></tr>` +
     Object.entries(data).map(([type, { price, trend }]) => {
-      const trendHTML = trend.map(val =>
-        `<span style="display:inline-block;width:5px;height:${10 + (toNum(val)/100)}px;background:#52b788;margin:0 1px;"></span>`
-      ).join("");
-      return `<tr><td>${type}</td><td><strong>₹${fmtINR(price)}</strong></td><td>${trendHTML}</td></tr>`;
+      const bars = trend.map(v => `<span style="display:inline-block;width:5px;height:${10 + (toNum(v)/100)}px;background:#52b788;margin:0 1px;"></span>`).join("");
+      return `<tr><td>${type}</td><td><strong>₹${fmtINR(price)}</strong></td><td>${bars}</td></tr>`;
     }).join("");
 }
 
@@ -117,14 +127,12 @@ function renderBriquetteTable(locationKey) {
   table.innerHTML =
     `<tr><th>Briquette Type</th><th>Price (₹/ton)</th><th>Last 4 Trend</th></tr>` +
     Object.entries(data).map(([type, { price, trend }]) => {
-      const trendHTML = trend.map(val =>
-        `<span style="display:inline-block;width:5px;height:${10 + (toNum(val)/100)}px;background:#6a4f2d;margin:0 1px;"></span>`
-      ).join("");
-      return `<tr><td>${type}</td><td><strong>₹${fmtINR(price)}</strong></td><td>${trendHTML}</td></tr>`;
+      const bars = trend.map(v => `<span style="display:inline-block;width:5px;height:${10 + (toNum(v)/100)}px;background:#6a4f2d;margin:0 1px;"></span>`).join("");
+      return `<tr><td>${type}</td><td><strong>₹${fmtINR(price)}</strong></td><td>${bars}</td></tr>`;
     }).join("");
 }
 
-// ====== SPECS + TIMESTAMP (GLOBAL rows + tolerant key) ======
+// ====== SPECS + TIMESTAMP (GLOBAL rows) ======
 function updateSpecs(material, isPellet) {
   const specBox   = isPellet ? els.pelletSpecs()        : els.briquetteSpecs();
   const timestamp = isPellet ? els.pelletTimestamp()    : els.briquetteTimestamp();
@@ -132,8 +140,8 @@ function updateSpecs(material, isPellet) {
 
   const globalInfo = sheetData.find(row =>
     (row.State ?? "").toString().trim().toLowerCase() === "global" &&
-    (row.Material ?? "Standard").toString().trim() === material &&
-    (row.Type ?? "").toString().trim().toLowerCase().includes(isPellet ? "pellet" : "briquette")
+    ( (row.Type ?? "").toString().trim().toLowerCase().includes(isPellet ? "pellet" : "briquette") ) &&
+    ( (row.Material ?? "Standard").toString().trim() === material )
   );
 
   if (specBox && globalInfo) {
@@ -147,9 +155,10 @@ function updateSpecs(material, isPellet) {
     `;
   }
 
-  const lastAnyRow = sheetData.find(r => r["Last Updated"] || r["Last updated"]);
-  if (timestamp && lastAnyRow) {
-    timestamp.textContent = lastAnyRow["Last Updated"] || lastAnyRow["Last updated"];
+  // 'Last Updated' tolerant to 'Last updated'
+  const lastAny = sheetData.find(r => r["Last Updated"] || r["Last updated"]);
+  if (timestamp && lastAny) {
+    timestamp.textContent = lastAny["Last Updated"] || lastAny["Last updated"];
   }
 }
 
@@ -201,7 +210,7 @@ function updateChartFor(material, locationKey, chartObj, isPellet) {
   updateSpecs(material, isPellet);
 }
 
-// ====== DROPDOWNS (with robust fallbacks) ======
+// ====== DROPDOWNS ======
 function fillMaterialDropdowns(locationKey) {
   const materialSelect  = els.materialSelect();
   const briquetteSelect = els.briquetteSelect();
@@ -213,24 +222,13 @@ function fillMaterialDropdowns(locationKey) {
   const pel = dataset[locationKey]?.materials?.pellets ?? {};
   const bri = dataset[locationKey]?.materials?.briquettes ?? {};
 
-  const pelKeys = Object.keys(pel);
-  const briKeys = Object.keys(bri);
-
-  // If a location has no rows (dirty sheet), fall back to union across all locations
-  const fallbackPel = pelKeys.length ? pelKeys : Array.from(new Set(
-    Object.values(dataset).flatMap(loc => Object.keys(loc.materials.pellets || {}))
-  ));
-  const fallbackBri = briKeys.length ? briKeys : Array.from(new Set(
-    Object.values(dataset).flatMap(loc => Object.keys(loc.materials.briquettes || {}))
-  ));
-
-  fallbackPel.forEach(m => {
+  Object.keys(pel).forEach(m => {
     const opt = document.createElement("option");
     opt.value = m; opt.textContent = m;
     materialSelect.appendChild(opt);
   });
 
-  fallbackBri.forEach(m => {
+  Object.keys(bri).forEach(m => {
     const opt = document.createElement("option");
     opt.value = m; opt.textContent = m;
     briquetteSelect.appendChild(opt);
@@ -243,13 +241,12 @@ function populateLocationsAndMaterials() {
   const briquetteSelect = els.briquetteSelect();
   if (!locationSelect) return;
 
+  // Primary: dataset keys; Fallback: unique states from raw sheet
   let locations = Object.keys(dataset).filter(l => l && l.toUpperCase() !== "GLOBAL");
   if (!locations.length) {
-    // Fallback: pull distinct states straight from sheet
     locations = [...new Set(
-      sheetData
-        .map(r => (r.State || r.state || r.STATE || "").toString().trim())
-        .filter(s => s && s.toUpperCase() !== "GLOBAL")
+      sheetData.map(r => (r.State || r.state || r.STATE || "").toString().trim())
+               .filter(s => s && s.toUpperCase() !== "GLOBAL")
     )];
   }
   locations.sort();
@@ -257,11 +254,14 @@ function populateLocationsAndMaterials() {
   locationSelect.innerHTML = "";
   locations.forEach(loc => {
     const opt = document.createElement("option");
-    opt.value = loc; opt.textContent = loc;
+    opt.value = loc;
+    opt.textContent = loc;
     locationSelect.appendChild(opt);
   });
 
   const firstLoc = locationSelect.value || locations[0];
+
+  // Only fill materials if those selects exist
   if (materialSelect && briquetteSelect) {
     fillMaterialDropdowns(firstLoc);
 
@@ -277,12 +277,11 @@ function populateLocationsAndMaterials() {
       renderStatusFor(loc);
     };
 
-    materialSelect.onchange  = () =>
-      updateChartFor(materialSelect.value,  locationSelect.value, pelletChart, true);
-    briquetteSelect.onchange = () =>
-      updateChartFor(briquetteSelect.value, locationSelect.value, briquetteChart, false);
+    materialSelect.onchange  = () => updateChartFor(materialSelect.value,  locationSelect.value, pelletChart,    true);
+    briquetteSelect.onchange = () => updateChartFor(briquetteSelect.value, locationSelect.value, briquetteChart, false);
   }
 
+  // initial render
   renderPelletTable(firstLoc);
   renderBriquetteTable(firstLoc);
   ensureCharts();
@@ -293,7 +292,7 @@ function populateLocationsAndMaterials() {
   renderStatusFor(firstLoc);
 }
 
-// ====== OPTIONAL EXTRAS (only run if elements exist) ======
+// ====== OPTIONAL NEW FEATURES (safe, only if elements exist) ======
 function computeBestDeals() {
   const bestBuyPrice  = els.bestBuyPrice();
   const bestBuyWhere  = els.bestBuyWhere();
@@ -301,16 +300,16 @@ function computeBestDeals() {
   const bestSellWhere = els.bestSellWhere();
   if (!bestBuyPrice && !bestSellPrice) return;
 
-  const pellets = sheetData.filter(r => (r.Type||"").toLowerCase()==="pellet"    && toNum(r.Price ?? r.Week) > 0);
-  const briqs   = sheetData.filter(r => (r.Type||"").toLowerCase()==="briquette" && toNum(r.Price ?? r.Week) > 0);
+  const pellets = sheetData.filter(r => ( (r.Type||r.type||"").toString().toLowerCase()==="pellet")    && toNum((r.Price ?? r.Week)) > 0);
+  const briqs   = sheetData.filter(r => ( (r.Type||r.type||"").toString().toLowerCase()==="briquette") && toNum((r.Price ?? r.Week)) > 0);
 
-  const minPellet = pellets.reduce((a,b) => !a || toNum(b.Price ?? b.Week) < toNum(a.Price ?? a.Week) ? b : a, null);
-  const maxPellet = pellets.reduce((a,b) => !a || toNum(b.Price ?? b.Week) > toNum(a.Price ?? a.Week) ? b : a, null);
-  const minBriq   = briqs.reduce(  (a,b) => !a || toNum(b.Price ?? b.Week) < toNum(a.Price ?? a.Week) ? b : a, null);
-  const maxBriq   = briqs.reduce(  (a,b) => !a || toNum(b.Price ?? b.Week) > toNum(a.Price ?? a.Week) ? b : a, null);
+  const minPellet = pellets.reduce((a,b) => !a || toNum((b.Price ?? b.Week)) < toNum((a.Price ?? a.Week)) ? b : a, null);
+  const maxPellet = pellets.reduce((a,b) => !a || toNum((b.Price ?? b.Week)) > toNum((a.Price ?? a.Week)) ? b : a, null);
+  const minBriq   = briqs.reduce(  (a,b) => !a || toNum((b.Price ?? b.Week)) < toNum((a.Price ?? a.Week)) ? b : a, null);
+  const maxBriq   = briqs.reduce(  (a,b) => !a || toNum((b.Price ?? b.Week)) > toNum((a.Price ?? a.Week)) ? b : a, null);
 
-  const bestBuy  = [minPellet, minBriq].filter(Boolean).reduce((a,b)=> toNum(b.Price ?? b.Week) < toNum(a.Price ?? a.Week) ? b : a);
-  const bestSell = [maxPellet, maxBriq].filter(Boolean).reduce((a,b)=> toNum(b.Price ?? b.Week) > toNum(a.Price ?? a.Week) ? b : a);
+  const bestBuy  = [minPellet, minBriq].filter(Boolean).reduce((a,b)=> toNum((b.Price ?? b.Week)) < toNum((a.Price ?? a.Week)) ? b : a);
+  const bestSell = [maxPellet, maxBriq].filter(Boolean).reduce((a,b)=> toNum((b.Price ?? b.Week)) > toNum((a.Price ?? a.Week)) ? b : a);
 
   if (bestBuyPrice)  bestBuyPrice.textContent  = fmtINR(toNum(bestBuy?.Price ?? bestBuy?.Week));
   if (bestBuyWhere)  bestBuyWhere.textContent  = bestBuy?.State ?? "—";
@@ -321,7 +320,7 @@ function computeBestDeals() {
 function setSeasonalBanner() {
   const node = els.seasonalText();
   if (!node) return;
-  const month = new Date().getMonth();
+  const month = new Date().getMonth(); // 0–11
   const notes = {
     3: "Rabi harvest increases agri‑residue → prices may soften regionally.",
     4: "Transport tightness around holidays → freight can spike.",
@@ -342,6 +341,7 @@ function wireFreightCalc() {
   calc();
 }
 
+// Optional: confidence + last updated badge
 function renderStatusFor(locationKey) {
   const confEl = els.confidenceBadge();
   const lastEl = els.lastUpdatedBadge();
@@ -354,13 +354,13 @@ function renderStatusFor(locationKey) {
 
   const pelletRow = sheetData.find(r =>
     (r.State ?? "").toString().trim() === locationKey &&
-    (r.Type  ?? "").toString().trim().toLowerCase() === "pellet" &&
-    (r.Material ?? "Standard").toString().trim() === m
+    ( (r.Type||"").toString().toLowerCase()==="pellet") &&
+    ( (r.Material??"Standard").toString().trim() === m)
   );
-  const briqRow = sheetData.find(r =>
+  const briqRow   = sheetData.find(r =>
     (r.State ?? "").toString().trim() === locationKey &&
-    (r.Type  ?? "").toString().trim().toLowerCase() === "briquette" &&
-    (r.Material ?? "Standard").toString().trim() === b
+    ( (r.Type||"").toString().toLowerCase()==="briquette") &&
+    ( (r.Material??"Standard").toString().trim() === b)
   );
 
   if (confEl) {
@@ -369,19 +369,20 @@ function renderStatusFor(locationKey) {
     confEl.className = `badge ${cls}`;
   }
 
-  const anyUpd = (pelletRow?.Updated || briqRow?.Updated ||
-                  sheetData.find(r => r["Last Updated"] || r["Last updated"])?.["Last Updated"] ||
-                  sheetData.find(r => r["Last Updated"] || r["Last updated"])?.["Last updated"]);
+  const lastAny = sheetData.find(r => r.Updated || r["Last Updated"] || r["Last updated"]);
+  const anyUpd = pelletRow?.Updated || briqRow?.Updated || (lastAny && (lastAny["Last Updated"] || lastAny["Last updated"] || lastAny.Updated));
   if (lastEl) lastEl.textContent = `Last updated: ${anyUpd || "--"}`;
 }
 
-// ====== INIT ======
+// ====== INIT FLOW ======
 async function boot() {
   await loadData();
   populateLocationsAndMaterials();
-  computeBestDeals();   // optional
-  setSeasonalBanner();  // optional
-  wireFreightCalc();    // optional
+  computeBestDeals();   // safe optional
+  setSeasonalBanner();  // safe optional
+  wireFreightCalc();    // safe optional
+  const loc = els.locationSelect()?.value;
+  if (loc) renderStatusFor(loc);
 }
 
 document.addEventListener("DOMContentLoaded", boot);
