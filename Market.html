@@ -3,143 +3,174 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Market Prices • Peltra</title>
+  <title>Market Prices · EverythingPallets</title>
   <link rel="stylesheet" href="style/market.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <header class="market-header">
+
+  <!-- Header -->
+  <header class="sticky-header">
     <div class="market-logo-container">
-      <img src="assets/Logo.png" alt="Peltra Logo" class="market-logo"/>
-      <h1 class="market-title">Market Prices</h1>
-      <p class="market-subtitle">Live pellet & briquette intelligence by location</p>
+      <img src="assets/Logo.png" alt="Everything Pallets Logo" class="market-logo"/>
     </div>
-    <nav class="market-nav">
-      <a href="index.html">Home</a>
-      <a class="active" href="market.html">Market Prices</a>
-      <a href="news.html">News</a>
-      <a href="contact.html">Contact</a>
-    </nav>
+    <h1 class="page-title">Market Prices</h1>
+    <p class="page-subtitle">Live Pellet & Briquette Intelligence · Hyper‑local · Verified</p>
   </header>
 
-  <main class="container">
-    <!-- Snapshot / Hooks -->
-    <section class="snapshot">
-      <div class="kpi">
-        <div class="kpi-label">Pellet Avg (₹/ton)</div>
-        <div class="kpi-value" id="kpiPelletAvg">--</div>
-        <div class="kpi-sub" id="kpiPelletLast">Last deal: --</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Briquette Avg (₹/ton)</div>
-        <div class="kpi-value" id="kpiBriqAvg">--</div>
-        <div class="kpi-sub" id="kpiBriqLast">Last deal: --</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Confidence</div>
-        <div class="confidence-wrap">
-          <div class="confidence-bar"><span id="confidenceBar"></span></div>
-          <div class="confidence-text" id="confidenceText">--%</div>
-        </div>
-        <div class="kpi-sub" id="lastUpdated">Updated: --</div>
-      </div>
-      <div class="kpi besties">
-        <div class="kpi-label">Today’s Signals</div>
-        <ul id="bestSignals" class="signals">
-          <!-- JS: Best Buy / Best Sell -->
-        </ul>
-      </div>
-    </section>
+  <!-- Nav -->
+  <nav class="sticky-nav">
+    <a href="index.html">Home</a>
+    <a href="market.html" class="active">Market Prices</a>
+    <a href="news.html">News</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+
+  <main>
 
     <!-- Controls -->
-    <section class="controls">
+    <section class="controls section">
       <div class="control">
         <label for="locationSelect"><strong>Location</strong></label>
         <select id="locationSelect"></select>
       </div>
+
       <div class="control">
-        <label for="materialSelect"><strong>Pellet Type (trend)</strong></label>
+        <label for="materialSelect"><strong>Pellet Type</strong></label>
         <select id="materialSelect"></select>
       </div>
+
       <div class="control">
-        <label for="briquetteSelect"><strong>Briquette Type (trend)</strong></label>
+        <label for="briquetteSelect"><strong>Briquette Type</strong></label>
         <select id="briquetteSelect"></select>
+      </div>
+    </section>
+
+    <!-- Live KPIs -->
+    <section class="kpi-grid section">
+      <div class="kpi-card">
+        <div class="kpi-label">Pellet Price</div>
+        <div class="kpi-value">₹<span id="pelletPriceLive">--</span>/ton</div>
+        <div class="kpi-sub">
+          <span id="pelletTrend" class="trend neutral">—</span>
+          <span class="muted">vs last month</span>
+        </div>
+        <div class="kpi-sub">
+          <span class="muted">Last deal:</span> ₹<span id="pelletLastDeal">--</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Briquette Price</div>
+        <div class="kpi-value">₹<span id="briquettePriceLive">--</span>/ton</div>
+        <div class="kpi-sub">
+          <span id="briquetteTrend" class="trend neutral">—</span>
+          <span class="muted">vs last month</span>
+        </div>
+        <div class="kpi-sub">
+          <span class="muted">Last deal:</span> ₹<span id="briquetteLastDeal">--</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Confidence</div>
+        <div class="confidence">
+          <div id="confidenceBar" class="bar"><span id="confidenceFill"></span></div>
+          <div class="confidence-text"><span id="confidenceText">--%</span> data coverage</div>
+        </div>
+        <div class="kpi-sub muted">Peltra Verified · <span id="lastUpdated">--</span></div>
+      </div>
+
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Peltra Biomass Index</div>
+        <div class="kpi-value">₹<span id="peltraIndex">--</span></div>
+        <div class="kpi-sub"><span id="peltraIndexDelta" class="trend neutral">—</span> since last month</div>
+      </div>
+    </section>
+
+    <!-- Today’s Alerts -->
+    <section class="alerts section">
+      <div class="alert-card good">
+        <div class="alert-title">Today’s Best Buy</div>
+        <div class="alert-body">
+          <div>₹<span id="bestBuyPrice">--</span>/ton · <span id="bestBuyState">--</span></div>
+          <button id="ctaBestBuy" class="btn">Request Rate Lock</button>
+        </div>
+      </div>
+
+      <div class="alert-card warn">
+        <div class="alert-title">Today’s Best Sell</div>
+        <div class="alert-body">
+          <div>₹<span id="bestSellPrice">--</span>/ton · <span id="bestSellState">--</span></div>
+          <button id="ctaBestSell" class="btn secondary">Sell via Peltra</button>
+        </div>
       </div>
     </section>
 
     <!-- Tables -->
     <section class="section">
       <h3>Pellet Prices (₹/ton)</h3>
-      <table id="materialTable" class="table"></table>
+      <table id="materialTable" class="hover-table"></table>
     </section>
 
     <section class="section">
       <h3>Briquette Prices (₹/ton)</h3>
-      <table id="briquetteTable" class="table"></table>
+      <table id="briquetteTable" class="hover-table"></table>
     </section>
 
     <!-- Charts -->
-    <section class="charts">
-      <div class="chart-box">
-        <h4 id="chartTitle">Pellet Price Trend</h4>
-        <canvas id="priceChart" height="220"></canvas>
-        <p class="timestamp">Last updated: <span id="pelletTimestamp">--</span></p>
-      </div>
-      <div class="chart-box">
-        <h4 id="briquetteChartTitle">Briquette Price Trend</h4>
-        <canvas id="briquetteChart" height="220"></canvas>
-        <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span></p>
-      </div>
+    <section class="section graph-box">
+      <h3 id="chartTitle">Pellet Price Trend</h3>
+      <canvas id="priceChart" height="240"></canvas>
+      <p class="timestamp">Last updated: <span id="pelletTimestamp">--</span> · 7‑day forecast: <span id="pelletForecast">--</span></p>
     </section>
 
-    <!-- Micro Forecast + Seasonal -->
-    <section class="forecast-season">
-      <div class="forecast">
-        <h4>7‑Day Micro Forecast</h4>
-        <p id="forecastNote">--</p>
-      </div>
-      <div class="seasonal">
-        <h4>Seasonal Impact</h4>
-        <p id="seasonalNote">--</p>
-      </div>
+    <section class="section graph-box">
+      <h3 id="briquetteChartTitle">Briquette Price Trend</h3>
+      <canvas id="briquetteChart" height="240"></canvas>
+      <p class="timestamp">Last updated: <span id="briquetteTimestamp">--</span> · 7‑day forecast: <span id="briquetteForecast">--</span></p>
     </section>
 
-    <!-- Freight / Landed Cost -->
-    <section class="freight">
-      <h3>Landed Cost Calculator</h3>
-      <form id="freightForm" class="freight-form">
+    <!-- Freight Calculator -->
+    <section class="section card">
+      <h3>Freight Calculator (Estimate)</h3>
+      <div class="freight-grid">
         <div>
-          <label for="freightDistance">Distance (km)</label>
-          <input id="freightDistance" type="number" min="1" placeholder="e.g., 250"/>
+          <label>Distance (km)</label>
+          <input type="number" id="fcDistance" placeholder="e.g., 250"/>
         </div>
         <div>
-          <label for="freightTons">Quantity (tons)</label>
-          <input id="freightTons" type="number" min="1" step="0.5" placeholder="e.g., 20"/>
+          <label>Tonnage (tons)</label>
+          <input type="number" id="fcTonnage" placeholder="e.g., 20"/>
         </div>
         <div>
-          <label for="freightFuelKind">Fuel</label>
-          <select id="freightFuelKind">
-            <option value="pellet">Pellet</option>
-            <option value="briquette">Briquette</option>
-          </select>
+          <label>Rate per km (₹/km)</label>
+          <input type="number" id="fcRate" placeholder="e.g., 22"/>
         </div>
-        <button type="submit" class="btn">Calculate</button>
-      </form>
-      <div class="freight-result" id="freightResult">Enter details to estimate landed price.</div>
-      <p class="tiny">* Uses industry-average road freight (₹/ton/km). For firm quotes, <a href="contact.html">contact us</a>.</p>
+        <div class="fc-actions">
+          <button id="fcCalc" class="btn">Calculate</button>
+          <div class="fc-result">≈ ₹<span id="fcResult">0</span> total</div>
+        </div>
+      </div>
+      <p class="muted small">Note: quick estimate. Ask Peltra for live freight & dispatch slots.</p>
     </section>
 
-    <!-- Sourcing Guarantee -->
-    <section class="guarantee">
-      <h3>Peltra Sourcing Guarantee</h3>
-      <p>We match or beat market prices for verified buyers. Lock rates for 3–7 days with Peltra‑verified suppliers.</p>
-      <a class="btn primary" href="contact.html">Get a Rate Lock</a>
+    <!-- Supplier Credibility (optional if data exists) -->
+    <section class="section" id="supplierSection" hidden>
+      <h3>Verified Suppliers</h3>
+      <table id="supplierTable" class="hover-table"></table>
     </section>
+
+    <!-- Quality Certificates (optional if data exists) -->
+    <section class="section" id="certSection" hidden>
+      <h3>Recent Quality Certificates</h3>
+      <table id="certTable" class="hover-table"></table>
+    </section>
+
   </main>
 
   <footer class="footer">
-    <p>© 2025 Peltra (EverythingPallets). Built for factories.</p>
+    <p>© 2025 EverythingPallets · Peltra Verified · Built for factories</p>
   </footer>
 
   <script src="js/market.js"></script>
