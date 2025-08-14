@@ -220,3 +220,106 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   refreshAll();
 });
+// ==============================
+// FREIGHT CALCULATOR (standalone)
+// ==============================
+// ---------- Freight calculator (simplified) ----------
+function formatINR(n) {
+  return `₹${Number(n).toLocaleString('en-IN')}`;
+}
+
+function calcFreight() {
+  const d = Number(document.getElementById('fc-distance').value || 0);
+  const qty = Number(document.getElementById('fc-qty').value || 0);
+  const base = Number(document.getElementById('fc-base').value || 0);
+
+  if (d <= 0 || qty <= 0 || base < 0) {
+    alert('Please enter valid Distance, Quantity, and Freight Base.');
+    return;
+  }
+
+  // Total freight = distance × base (₹/km)
+  const totalFreight = d * base;
+
+  // Freight per ton
+  const perTon = totalFreight / qty;
+
+  // Show results
+  document.getElementById('fc-total').textContent = formatINR(totalFreight);
+  document.getElementById('fc-perton').textContent = `${formatINR(perTon)}/ton`;
+  document.getElementById('fc-results').hidden = false;
+}
+
+function resetFreight() {
+  ['fc-distance','fc-qty','fc-base'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fc-truck').selectedIndex = 0;
+  document.getElementById('fc-results').hidden = true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const calcBtn = document.getElementById('fc-calc');
+  const resetBtn = document.getElementById('fc-reset');
+  if (calcBtn && resetBtn) {
+    calcBtn.addEventListener('click', calcFreight);
+    resetBtn.addEventListener('click', resetFreight);
+  }
+});
+// =======================================
+// SUBMIT YOUR OWN PRICE (local only)
+// Netlify Forms + AJAX submit (no reload)
+(() => {
+  const form = document.querySelector('form[name="price-submissions"]');
+  const feed = document.getElementById('submitFeed');
+  if (!form || !feed) return;
+
+  const toURLEncoded = (data) =>
+    Object.keys(data).map(k => encodeURIComponent(k) + "=" + encodeURIComponent(data[k])).join("&");
+
+  function addToFeed(item){
+    const card = document.createElement('div');
+    card.className = 'feed-item';
+    card.innerHTML = `
+      <div class="feed-top">${item.material} • ₹${Number(item.price).toLocaleString('en-IN')}/ton</div>
+      <div class="feed-mid">${item.city} • ${item.quantity} tons</div>
+      ${item.notes ? `<div class="feed-notes">${item.notes}</div>` : ''}
+      <div class="feed-time">${new Date().toLocaleString('en-IN')}</div>
+    `;
+    feed.prepend(card);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Gather values
+    const payload = {
+      "form-name": form.getAttribute("name"), // required by Netlify
+      material: form.material.value.trim(),
+      price: form.price.value,
+      quantity: form.quantity.value,
+      city: form.city.value.trim(),
+      notes: form.notes.value.trim(),
+    };
+
+    if (!payload.material || !payload.price) {
+      alert("Please enter Material and Price.");
+      return;
+    }
+
+    try {
+      // Post to Netlify Forms endpoint (same page)
+      await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: toURLEncoded(payload)
+      });
+
+      // Optimistic local feed
+      addToFeed(payload);
+      form.reset();
+      form.material.focus();
+    } catch (err) {
+      console.error(err);
+      alert("Could not submit right now. Please try again.");
+    }
+  });
+})();
