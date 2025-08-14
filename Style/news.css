@@ -127,16 +127,16 @@ main{ width:min(1100px,92%); margin:0 auto; padding:22px 0 36px }
 .error{ color:#b23; background:#fff4f4; border:1px solid #ffd1d1 }
 .hidden{ display:none }
 
-/* FOOTER */
-.site-footer {
+footer {
   text-align: center;
   padding: 2rem 1rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #EAF6F6;
-  background: linear-gradient(to right, #1C3D5A, #66A5AD);
+  background: linear-gradient(120deg, #1C3D5A, #66A5AD);
   border-top: 1px solid #D3E3EC;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 -2px 6px rgba(0,0,0,.05);
 }
+footer p { margin: 0; font-weight: 700; letter-spacing: .2px; }
 
 /* ===== Responsiveness tweaks ===== */
 @media (max-width:820px){
