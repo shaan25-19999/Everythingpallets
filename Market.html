@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <!-- ✅ SEO Meta Tags -->
-  <title>Biomass Market Prices in India – Pellets & Briquettes | EverythingPellets</title>
+  <title>Biomass Market Prices in India – Pellets & Briquettes | palletrates</title>
   <meta name="description" content="View live biomass fuel prices including 8mm pellets and 90mm briquettes across India. Track price trends by location, material type, and quality specs.">
   <meta name="keywords" content="biomass prices, pellet rates, briquette market, 8mm pellets, 90mm briquettes, biomass fuel India, renewable energy prices, market trend biomass">
-  <meta name="author" content="EverythingPellets">
+  <meta name="author" content="palletrates">
 
   <!-- ✅ Canonical URL -->
   <link rel="canonical" href="https://everythingpellets.com/market.html" />
 
   <!-- ✅ Open Graph Tags for Social Sharing -->
-  <meta property="og:title" content="Live Biomass Pellet & Briquette Prices in India – EverythingPellets">
+  <meta property="og:title" content="Live Biomass Pellet & Briquette Prices in India – pelletrates">
   <meta property="og:description" content="Compare prices of 8mm pellets and 90mm briquettes by state and material type. See price trends and quality insights.">
   <meta property="og:image" content="https://everythingpellets.com/assets/preview.jpg"> <!-- 🔁 Replace if needed -->
   <meta property="og:url" content="https://everythingpellets.com/market.html">
@@ -27,7 +27,7 @@
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
   <!-- ✅ Styles & Scripts -->
-  <link rel="stylesheet" href="style/market.css">
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
@@ -108,12 +108,124 @@
     </section>
   </main>
 
-  <!-- ✅ FOOTER -->
+  <!-- ✅ SCRIPT -->
+  <script src="script.js"></script>
+</body>
+<!-- ========================= -->
+<!-- FREIGHT & LANDED COST CALCULATOR -->
+<!-- ========================= -->
+<section class="section card calc-card" id="freightCalc">
+  <h3>Freight Calculator</h3>
+
+  <div class="calc-grid">
+    <label>
+      <span>Distance (km)</span>
+      <input id="fc-distance" type="number" min="1" placeholder="e.g., 320" required>
+    </label>
+
+    <label>
+      <span>Quantity (tons)</span>
+      <input id="fc-qty" type="number" min="1" placeholder="e.g., 20" required>
+    </label>
+
+    <label>
+      <span>Truck Type</span>
+      <select id="fc-truck">
+        <option value="20">20T</option>
+        <option value="24">24T</option>
+        <option value="28">28T</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Freight Base (₹/km)</span>
+      <input id="fc-base" type="number" min="0" step="0.01" placeholder="e.g., 35" required>
+    </label>
+  </div>
+
+  <!-- use the same button styles as Submit Price -->
+  <div class="actions calc-actions">
+    <button id="fc-calc" type="button" class="btn primary">Calculate</button>
+    <button id="fc-reset" type="button" class="btn primary">Reset</button>
+    <!-- If you prefer Reset outlined: class="btn ghost" -->
+  </div>
+
+  <div id="fc-results" class="calc-results" hidden>
+    <p><strong>Total Freight:</strong> <span id="fc-total">₹0</span></p>
+    <p><strong>Freight per ton:</strong> <span id="fc-perton">₹0/ton</span></p>
+  </div>
+
+  <p class="note">* Estimates only. Actuals depend on lane, loading, wait time & diesel price.</p>
+</section>
+
+
+<!-- ========================= -->
+<!-- SUBMIT YOUR OWN PRICE (Netlify Forms, no JS required) -->
+<section class="section">
+  <div class="card" id="submit-price">
+    <h3>Submit Your Own Price</h3>
+    <p class="muted">Keep the market sharp. Submissions are reviewed before inclusion.</p>
+
+    <!-- ✅ Netlify-form enabled -->
+    <form name="price-submissions" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <!-- Netlify requires this hidden input to match the form name -->
+      <input type="hidden" name="form-name" value="price-submissions" />
+      <!-- Honeypot (spam trap) -->
+      <p style="display:none;">
+        <label>Don’t fill this out: <input name="bot-field" /></label>
+      </p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="spMaterial">Material</label>
+          <input id="spMaterial" name="material" type="text" placeholder="e.g., Pellet – Rice Husk" required />
+        </div>
+
+        <div class="field">
+          <label for="spPrice">Price (₹/ton)</label>
+          <input id="spPrice" name="price" type="number" inputmode="numeric" placeholder="e.g., 7700" required />
+        </div>
+
+        <div class="field">
+          <label for="spQty">Quantity (tons)</label>
+          <input id="spQty" name="quantity" type="number" inputmode="numeric" placeholder="e.g., 40" />
+        </div>
+
+        <div class="field">
+          <label for="spCity">City / Cluster</label>
+          <input id="spCity" name="city" type="text" placeholder="e.g., Yamunanagar" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:8px;">
+        <label for="spNotes">Notes (optional)</label>
+        <input id="spNotes" name="notes" type="text" placeholder="e.g., ex‑factory, incl. loading" />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn primary">Submit Price</button>
+      </div>
+    </form>
+
+    <h4 style="margin-top:16px;">Community Prices (recent)</h4>
+    <div id="submitFeed" class="feed"></div>
+  </div>
+</section>
+<!-- ========================= -->
+<!-- CALL FOR BEST RATES CTA -->
+<!-- ========================= -->
+<section class="section cta" id="bestRatesCTA">
+  <h3>Call for Best Rates & Top Quality Biofuel</h3>
+  <p>Verified supply, consistent quality, trusted delivery.</p>
+  <div class="cta-actions">
+    <a href="tel:+919910033481" class="btn primary">📞 Call Now</a>
+    <a href="https://wa.me/919910033481?text=Hi%20Peltra%2C%20I%20need%20best%20rates%20and%20quality%20biofuel." target="_blank" class="btn ghost">💬 WhatsApp</a>
+  </div>
+</section>
+
+<!-- ✅ FOOTER -->
   <footer class="footer">
-    <p>&copy; 2025 EverythingPellets. Made with sustainability in mind.</p>
+    <p>&copy; 2025 pelletrates. Made with sustainability in mind.</p>
   </footer>
 
-  <!-- ✅ SCRIPT -->
-  <script src="js/market.js"></script>
-</body>
 </html>
