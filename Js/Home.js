@@ -1,151 +1,229 @@
+// Home page data + charts + insights (AVERAGE by default, no dropdown)
 const API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
+
 let sheetData = [];
 let pelletChartInstance = null;
 let briquetteChartInstance = null;
 
-function formatNumber(num) {
-  if (!num || isNaN(num)) return "--";
-  return Number(num).toLocaleString("en-IN");
-}
+const fmtINR = (n) => isFinite(n) ? Number(n).toLocaleString("en-IN") : "--";
+const toNum = (x) => {
+  if (x == null) return NaN;
+  const s = String(x).replace(/,/g, "").trim();
+  const n = Number(s);
+  return isFinite(n) ? n : NaN;
+};
 
-async function fetchData() {
+// Fetch & boot
+document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const response = await fetch(API_URL);
-    sheetData = await response.json();
-    populateLocationDropdown();
-    updateData("AVERAGE"); // ✅ Load AVERAGE first
-  } catch (error) {
-    console.error("❌ Error fetching data:", error);
-  }
-}
+    const res = await fetch(API_URL);
+    sheetData = await res.json();
 
-function populateLocationDropdown() {
-  const locationSelect = document.getElementById("locationSelect");
-  const uniqueStates = [...new Set(sheetData.map(row => row.State?.trim()).filter(Boolean))];
+    // expose for any helper scripts (optional)
+    window.sheetData = sheetData;
 
-  locationSelect.innerHTML = ""; // ✅ Clear existing options
-
-  uniqueStates.forEach(state => {
-    const option = document.createElement("option");
-    option.value = state;
-    option.textContent = state;
-    locationSelect.appendChild(option);
-  });
-
-  locationSelect.value = "AVERAGE"; // ✅ Set default selected
-  locationSelect.addEventListener("change", () => {
-    updateData(locationSelect.value);
-  });
-}
-
-function updateData(location) {
-  let pelletPrice = "--";
-  let briquettePrice = "--";
-
-  for (const row of sheetData) {
-    const state = row.State?.trim();
-    const type = row.Type?.trim().toLowerCase();
-    const price = row.Price?.toString().replace(/,/g, "");
-
-    if (state === location && type === "pellet") {
-      pelletPrice = formatNumber(price);
-    } else if (state === location && type === "briquette") {
-      briquettePrice = formatNumber(price);
+    // Stamp "last verified"
+    const lastVerifiedEl = document.getElementById("lastVerified");
+    if (lastVerifiedEl) {
+      const now = new Date();
+      lastVerifiedEl.textContent = now.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     }
+
+    // Start ticker
+    startTicker();
+
+    // Populate prices + charts for AVERAGE
+    renderAveragePrices();
+    drawCharts("AVERAGE");
+
+    // Build Top 3 cheapest (Pellet)
+    renderTopCheapestPellet();
+  } catch (e) {
+    console.error("Home: fetch error", e);
   }
+});
 
-  document.getElementById("pelletPrice").textContent = pelletPrice;
-  document.getElementById("briquettePrice").textContent = briquettePrice;
-
-  drawCharts(location);
+function startTicker() {
+  const ticker = document.getElementById("verifiedTicker");
+  if (!ticker) return;
+  const msgs = [
+    "Tracking cluster-level moves",
+    "Watching diesel & lane effects",
+    "Verifying submissions",
+    "Sourcing signals from multiple clusters"
+  ];
+  let i = 0;
+  ticker.textContent = msgs[i];
+  setInterval(() => { i = (i + 1) % msgs.length; ticker.textContent = msgs[i]; }, 2500);
 }
 
-function drawCharts(location) {
+function renderAveragePrices() {
+  const pelletEl = document.getElementById("pelletPrice");
+  const briqEl = document.getElementById("briquettePrice");
+
+  // Prefer explicit AVERAGE rows; else compute weighted simple mean across states.
+  const pelletAvgRow = sheetData.find(r => (r.State || "").trim().toUpperCase() === "AVERAGE" && (r.Type || "").toLowerCase() === "pellet");
+  const briqAvgRow   = sheetData.find(r => (r.State || "").trim().toUpperCase() === "AVERAGE" && (r.Type || "").toLowerCase() === "briquette");
+
+  let pelletPrice = toNum(pelletAvgRow?.Price);
+  let briqPrice   = toNum(briqAvgRow?.Price);
+
+  if (!isFinite(pelletPrice)) {
+    const pellets = sheetData.filter(r => (r.Type || "").toLowerCase() === "pellet" && (r.State || "").trim().toUpperCase() !== "AVERAGE")
+      .map(r => toNum(r.Price)).filter(Number.isFinite);
+    pelletPrice = pellets.length ? Math.round(pellets.reduce((a,b)=>a+b,0) / pellets.length) : NaN;
+  }
+  if (!isFinite(briqPrice)) {
+    const briqs = sheetData.filter(r => (r.Type || "").toLowerCase() === "briquette" && (r.State || "").trim().toUpperCase() !== "AVERAGE")
+      .map(r => toNum(r.Price)).filter(Number.isFinite);
+    briqPrice = briqs.length ? Math.round(briqs.reduce((a,b)=>a+b,0) / briqs.length) : NaN;
+  }
+
+  if (pelletEl) pelletEl.textContent = fmtINR(pelletPrice);
+  if (briqEl) briqEl.textContent = fmtINR(briqPrice);
+}
+
+function drawCharts(location /* "AVERAGE" */) {
   const labels = ["Year", "6 Months", "Month", "Week"];
 
-  const pelletRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "pellet");
-  const briquetteRow = sheetData.find(row => row.State?.trim() === location && row.Type?.trim().toLowerCase() === "briquette");
+  // Helper to get a row by location + type
+  const getRow = (type) => sheetData.find(r =>
+    (r.State || "").trim().toUpperCase() === String(location).toUpperCase() &&
+    (r.Type || "").trim().toLowerCase() === type
+  );
 
-  const parseValues = row => [
-    parseInt(row?.Year || 0),
-    parseInt(row?.["6 Month"] || 0),
-    parseInt(row?.Month || 0),
-    parseInt(row?.Week || 0)
-  ];
+  // Prefer explicit AVERAGE rows; fallback: median of states for each bucket
+  const pelletRow = getRow("pellet");
+  const briqRow   = getRow("briquette");
 
-  const pelletValues = parseValues(pelletRow);
-  const briquetteValues = parseValues(briquetteRow);
+  const extractSeries = (row, type) => {
+    if (row) {
+      return [
+        toNum(row.Year),
+        toNum(row["6 Month"]) || toNum(row["6 Months"]) || toNum(row["6mo"]),
+        toNum(row.Month),
+        toNum(row.Week)
+      ].map(v => (isFinite(v) ? v : 0));
+    }
+    // fallback across states if AVERAGE row missing
+    const rows = sheetData.filter(r => (r.Type || "").trim().toLowerCase() === type && (r.State || "").trim().toUpperCase() !== "AVERAGE");
+    const pick = (keyList) => {
+      const vals = rows.map(r => {
+        for (const k of keyList) {
+          const v = toNum(r[k]);
+          if (isFinite(v)) return v;
+        }
+        return NaN;
+      }).filter(Number.isFinite);
+      if (!vals.length) return 0;
+      vals.sort((a,b)=>a-b);
+      return vals[Math.floor(vals.length/2)]; // median
+    };
+    return [
+      pick(["Year"]),
+      pick(["6 Month","6 Months","6mo"]),
+      pick(["Month"]),
+      pick(["Week"])
+    ];
+  };
 
+  const pelletValues = extractSeries(pelletRow, "pellet");
+  const briqValues   = extractSeries(briqRow, "briquette");
+
+  // Destroy old
   if (pelletChartInstance) pelletChartInstance.destroy();
   if (briquetteChartInstance) briquetteChartInstance.destroy();
 
-  const getBounds = (values) => {
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    return {
-      suggestedMin: Math.floor(min * 0.95),
-      suggestedMax: Math.ceil(max * 1.05)
-    };
+  const bounds = (arr) => {
+    const finite = arr.filter(Number.isFinite);
+    if (!finite.length) return { min: 0, max: 100 };
+    const min = Math.min(...finite), max = Math.max(...finite);
+    return { min: Math.floor(min * 0.95), max: Math.ceil(max * 1.05) };
   };
+  const pb = bounds(pelletValues), bb = bounds(briqValues);
 
-  const pelletBounds = getBounds(pelletValues);
-  const briquetteBounds = getBounds(briquetteValues);
-
-  const getChartOptions = (suggestedMin, suggestedMax) => ({
+  const baseOptions = (suggestedMin, suggestedMax) => ({
     type: "line",
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      elements: {
-        line: { tension: 0.3, borderWidth: 2 },
-        point: { radius: 4, backgroundColor: "#FFA500" }
-      },
+      elements: { line: { tension: 0.3, borderWidth: 2 }, point: { radius: 4 } },
       scales: {
         y: {
-          beginAtZero: false,
-          suggestedMin,
-          suggestedMax,
-          ticks: {
-            callback: value => `₹${value.toLocaleString("en-IN")}`
-          }
-        }
+          suggestedMin, suggestedMax,
+          ticks: { callback: v => `₹${Number(v).toLocaleString("en-IN")}` },
+          grid: { color: "rgba(28,61,90,0.08)" }
+        },
+        x: { grid: { color: "rgba(28,61,90,0.06)" } }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: {
-            label: ctx => `₹${ctx.parsed.y.toLocaleString("en-IN")}/ton`
-          }
+          callbacks: { label: ctx => `₹${ctx.parsed.y.toLocaleString("en-IN")}/ton` }
         }
       }
     }
   });
 
   pelletChartInstance = new Chart(document.getElementById("pelletChart"), {
-    ...getChartOptions(pelletBounds.suggestedMin, pelletBounds.suggestedMax),
+    ...baseOptions(pb.min, pb.max),
     data: {
       labels,
       datasets: [{
         label: "Pellet Price",
         data: pelletValues,
         borderColor: "#1C3D5A",
-        backgroundColor: "#DDEAF4"
+        backgroundColor: "rgba(29,61,89,0.12)",
+        fill: false
       }]
     }
   });
 
   briquetteChartInstance = new Chart(document.getElementById("briquetteChart"), {
-    ...getChartOptions(briquetteBounds.suggestedMin, briquetteBounds.suggestedMax),
+    ...baseOptions(bb.min, bb.max),
     data: {
       labels,
       datasets: [{
         label: "Briquette Price",
-        data: briquetteValues,
+        data: briqValues,
         borderColor: "#FFA500",
-        backgroundColor: "#FFEFD5"
+        backgroundColor: "rgba(255,165,0,0.12)",
+        fill: false
       }]
     }
   });
 }
 
-document.addEventListener("DOMContentLoaded", fetchData);
+function renderTopCheapestPellet() {
+  const ul = document.getElementById("cheapestList");
+  if (!ul) return;
+
+  const pellets = sheetData
+    .filter(r => (r.Type || "").toLowerCase().trim() === "pellet")
+    .map(r => {
+      const state = (r.State || "").trim();
+      const price = toNum(r.Price);
+      return { state, price };
+    })
+    .filter(x => x.state && x.state.toUpperCase() !== "AVERAGE" && isFinite(x.price));
+
+  // Min price per state
+  const perStateMin = pellets.reduce((acc, r) => {
+    acc[r.state] = Math.min(acc[r.state] ?? Infinity, r.price);
+    return acc;
+  }, {});
+
+  const top3 = Object.entries(perStateMin)
+    .sort((a,b) => a[1] - b[1])
+    .slice(0, 3);
+
+  ul.innerHTML = top3.length
+    ? top3.map(([state, price], i) => `
+        <li>
+          <span class="rank">${i + 1}</span>
+          <span class="state">${state}</span>
+          <span class="price">₹${price.toLocaleString("en-IN")}/ton</span>
+        </li>
+      `).join("")
+    : `<li class="muted">Not enough data yet.</li>`;
+}
