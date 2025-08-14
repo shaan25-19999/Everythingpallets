@@ -3,35 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EverythingPallets — Home</title>
 
-  <!-- ✅ SEO -->
-  <title>PelletRates – Live Biomass Market Prices in India</title>
-  <meta name="description" content="Track real-time prices of biomass pellets and briquettes across India. Compare rates by state and view trend charts." />
-  <link rel="canonical" href="https://pelletrates.com/" />
-
-  <!-- ✅ Social (update preview image path if needed) -->
-  <meta property="og:title" content="PelletRates – Live Biomass Market Prices in India" />
-  <meta property="og:description" content="Live pellet & briquette prices by state with clean charts and quick insights." />
-  <meta property="og:image" content="assets/preview.jpg" />
-  <meta property="og:url" content="https://pelletrates.com/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-
-  <!-- ✅ Favicon -->
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-
-  <!-- ✅ Styles & Chart.js -->
-  <link rel="stylesheet" href="style/Home.css">
+  <!-- Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style/home.css">
 </head>
 <body>
 
-  <!-- HEADER -->
+  <!-- HERO -->
   <header class="site-header">
-    <div class="logo-header">
-      <img src="assets/Logo.png" alt="PelletRates Logo" class="site-logo" />
-      <p class="home-title">PelletRates</p>
-      <p class="site-tagline">Live pellet & briquette prices across India</p>
+    <div class="hero">
+      <img src="assets/Logo.png" alt="EverythingPallets Logo" class="hero-logo" />
+      <h1 class="hero-title">India’s Most Trusted Biomass Price Dashboard</h1>
+      <p class="hero-subtitle">Live rates, market insights, and quality assurance — all in one place.</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#live-prices">Check Today’s Prices</a>
+        <a class="btn ghost" href="market.html">Open Market Page</a>
+      </div>
     </div>
   </header>
 
@@ -45,48 +36,94 @@
     </div>
   </nav>
 
-  <!-- MAIN -->
   <main>
-    <h2>Live Market Price Update</h2>
-
-    <div>
-      <label for="locationSelect"><strong>Select Location:</strong></label><br/>
-      <select id="locationSelect">
-        <option disabled selected>Loading...</option>
-      </select>
-    </div>
-
-    <div class="price-section">
-      <div class="price-box">
-        <strong>Pellet Price:</strong><br/>
-        ₹<span id="pelletPrice">--</span>/ton
+    <!-- TRUST / STATUS -->
+    <section class="section trust" id="trust">
+      <div class="trust-badge">
+        <span class="tick">✔</span>
+        <span><strong>Verified Peltra Rates</strong></span>
+        <span class="dot">•</span>
+        <span>Last verified: <strong id="lastVerified">--</strong></span>
+        <span class="dot">•</span>
+        <span id="verifiedTicker">Refreshing market signals…</span>
       </div>
-      <div class="price-box">
-        <strong>Briquette Price:</strong><br/>
-        ₹<span id="briquettePrice">--</span>/ton
-      </div>
-    </div>
+    </section>
 
-    <div class="graph-container">
-      <div class="chart-box">
-        <canvas id="pelletChart"></canvas>
-      </div>
-      <div class="chart-box">
-        <canvas id="briquetteChart"></canvas>
-      </div>
-    </div>
+    <!-- LIVE PRICES + CHARTS -->
+    <section class="section" id="live-prices">
+      <h2>Live Market Price Update for India</h2>
 
-    <div class="cta" onclick="window.location.href='contact.html'">
-      <h3>Get today’s best rate & secure supply →</h3>
-    </div>
+      <div class="price-section">
+        <div class="price-box">
+          <div class="price-label">Pellet Price</div>
+          <div class="price-value">
+            ₹<span id="pelletPrice">--</span><span class="unit">/ton</span>
+          </div>
+        </div>
+        <div class="price-box">
+          <div class="price-label">Briquette Price</div>
+          <div class="price-value">
+            ₹<span id="briquettePrice">--</span><span class="unit">/ton</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="graph-container">
+        <div class="chart-box">
+          <h3>Pellet Price Trend</h3>
+          <canvas id="pelletChart"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Briquette Price Trend</h3>
+          <canvas id="briquetteChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section class="section insights">
+      <div class="insights-card">
+        <h3>Top 3 Cheapest Regions (Pellets)</h3>
+        <ul id="cheapestList" class="cheapest-list"><!-- populated by JS --></ul>
+        <p class="note">Based on current submitted/aggregated rates. Subject to lane & loading conditions.</p>
+      </div>
+
+      <div class="insights-card light">
+        <h3>Why Peltra?</h3>
+        <div class="why-grid">
+          <div class="why">
+            <div class="why-icon">📈</div>
+            <div class="why-title">Accurate Prices</div>
+            <div class="why-text">Live data, continuous refresh, and verified submissions.</div>
+          </div>
+          <div class="why">
+            <div class="why-icon">✅</div>
+            <div class="why-title">Quality First</div>
+            <div class="why-text">Focused on reliable biomass supply and stable quality.</div>
+          </div>
+          <div class="why">
+            <div class="why-icon">🌐</div>
+            <div class="why-title">Nationwide Network</div>
+            <div class="why-text">Efficient sourcing across clusters to keep costs in check.</div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- FOOTER -->
   <footer>
-    <p>&copy; 2025 PelletRates. All rights reserved.</p>
+    <p>&copy; 2025 EverythingPallets. All rights reserved.</p>
   </footer>
 
-  <!-- JS -->
-  <script src="js/Home.js"></script>
+  <!-- MOBILE STICKY BAR -->
+  <div class="sticky-bar">
+    <a class="sticky-link" href="#live-prices">Today’s Prices</a>
+    <span class="dot">•</span>
+    <a class="sticky-link" href="market.html">Open Market Page</a>
+  </div>
+
+  <!-- Page JS -->
+  <script src="js/Home.js" defer></script>
 </body>
 </html>
