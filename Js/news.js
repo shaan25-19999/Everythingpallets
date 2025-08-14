@@ -1,5 +1,5 @@
 // Path to your static JSON (keep this next to news.html)
-const NEWS_PATH = "News.json";
+const NEWS_PATH = "data/News.json";
 
 // Optional: remember user's state for future features
 const getPreferredState = () => localStorage.getItem("preferredState") || "";
