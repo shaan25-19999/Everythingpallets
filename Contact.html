@@ -2,47 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact Us | EverythingPellets</title>
-  <link rel="stylesheet" href="style/contact.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contact • Peltra</title>
+  <link rel="stylesheet" href="style/contact.css">
 </head>
 <body>
 
-  <!-- ✅ TOP NAVIGATION -->
+  <!-- Top nav only (no hero here) -->
   <nav>
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="market.html">Market Prices</a>
       <a href="news.html">News</a>
-      <a href="contact.html">Contact</a>
+      <a href="contact.html" aria-current="page">Contact</a>
     </div>
   </nav>
 
-  <!-- ✅ CONTACT SECTION -->
-  <section class="contact-hero">
-    <div class="container">
-      <div class="logo-container">
-        <img src="assets/Logo2.png" alt="EverythingPellets Logo" class="logo" />
+  <main>
+    <!-- Hero lives in the body (light background like your original) -->
+    <section class="hero">
+      <img src="assets/Logo.png" alt="PELLETRATES by PELTRA" class="hero-logo" />
+      <h1 class="hero-title">Let’s Talk</h1>
+      <p class="hero-subtitle">
+        Tell us what you need. Whether it's biomass pellets, raw materials, or
+        strategic supply — we’re just one call away.
+      </p>
+
+      <div class="hero-cta">
+        <a class="btn primary" href="tel:+91XXXXXXXXXX">
+          <span class="ico">📞</span> Call Us Now
+        </a>
+        <a class="btn outline" id="waTop" target="_blank" rel="noopener">
+          <span class="ico">💬</span> Chat on WhatsApp
+        </a>
+        <a class="btn gold" href="mailto:sales@peltra.in?subject=Peltra%20enquiry">
+          <span class="ico">✉️</span> Email Us
+        </a>
       </div>
 
-      <h1>Let’s Talk</h1>
-      <p class="intro">Tell us what you need. Whether it's biomass pellets, raw materials, or strategic supply — we’re just one call away.</p>
+      <p class="response-note">We usually respond within 10 minutes during working hours.</p>
+    </section>
 
-      <div class="cta-buttons">
-        <a href="tel:+919910033481" class="cta call">📞 Call Us Now</a>
-        <a href="https://wa.me/919910033481" class="cta whatsapp">💬 Chat on WhatsApp</a>
-        <a href="mailto:peltraenergy@gmail.com" class="cta email">✉️ Email Us</a>
-      </div>
+    <!-- Quick message card (Netlify Forms) -->
+    <section class="card">
+      <h2>Send a quick message</h2>
+      <p class="muted">We usually respond in <strong>under 10 minutes</strong> during working hours.</p>
 
-      <p class="response-time">We usually respond within 10 minutes :)</p>
-    </div>
-  </section>
+      <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="contactForm">
+        <input type="hidden" name="form-name" value="contact">
+        <p class="hidden"><label>Don’t fill this out: <input name="bot-field" /></label></p>
 
-  <!-- ✅ FOOTER -->
-  <footer class="footer">
-    <p>&copy; 2025 EverythingPellets. Made with sustainability in mind.</p>
+        <div class="grid-2">
+          <label class="field">
+            <span>Name</span>
+            <input type="text" name="name" id="cName" placeholder="Your name" required />
+          </label>
+
+          <label class="field">
+            <span>Phone / WhatsApp</span>
+            <input type="tel" name="phone" id="cPhone" placeholder="+91-XXXXXXXXXX" required />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Message</span>
+          <textarea name="message" id="cMsg" rows="4" placeholder="Tell us what you need — rates, supply support, quality, etc." required></textarea>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn primary">Send Message</button>
+          <a id="waInline" class="btn ghost" target="_blank" rel="noopener">Or WhatsApp</a>
+        </div>
+
+        <div id="formStatus" class="form-status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <!-- Trust/USP cards -->
+    <section class="usp-grid">
+      <article class="usp">
+        <div class="usp-ico">⚡</div>
+        <h3>Fast response</h3>
+        <p>You get quick, actionable answers — not a ticket number.</p>
+      </article>
+      <article class="usp">
+        <div class="usp-ico">✅</div>
+        <h3>Verified rates</h3>
+        <p>Backed by live market tracking and direct supplier checks.</p>
+      </article>
+      <article class="usp">
+        <div class="usp-ico">🧪</div>
+        <h3>Quality support</h3>
+        <p>Specs, trials, and sourcing help so supply issues don’t stop production.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    © 2025 Peltra. Built for the biomass industry.
   </footer>
 
+  <script src="js/contact.js"></script>
 </body>
 </html>
