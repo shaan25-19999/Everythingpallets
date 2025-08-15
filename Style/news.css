@@ -127,6 +127,18 @@ main{ width:min(1100px,92%); margin:0 auto; padding:22px 0 36px }
 .error{ color:#b23; background:#fff4f4; border:1px solid #ffd1d1 }
 .hidden{ display:none }
 
+/* ===== Pagination ===== */
+.pager{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  align-items:center;
+  margin:18px 0 6px;
+}
+.pager-info{ font-weight:800; color:var(--muted) }
+.pager-btn[disabled]{ opacity:.5; cursor:not-allowed }
+
+/* ===== Footer ===== */
 footer {
   text-align: center;
   padding: 2rem 1rem;
