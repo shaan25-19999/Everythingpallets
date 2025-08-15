@@ -1,10 +1,7 @@
-// Path to your static JSON (keep this next to news.html)
+// Path to your static JSON
 const NEWS_PATH = "data/News.json";
 
-// Optional: remember user's state for future features
-const getPreferredState = () => localStorage.getItem("preferredState") || "";
-
-// Local view counter
+// Local view counter (purely client-side)
 const VIEWS_KEY = "peltra_news_views"; // { "<title>|<date>": count }
 const views = JSON.parse(localStorage.getItem(VIEWS_KEY) || "{}");
 const bumpView = (key) => {
@@ -21,16 +18,24 @@ const els = {
   search: document.getElementById("searchBox"),
   breakingBar: document.getElementById("breakingBar"),
   breakingLink: document.getElementById("breakingLink"),
+  pager: document.getElementById("newsPager"),
 };
 
 let allNews = [];
 let activeTag = "All";
 
+// Pagination state
+const itemsPerPage = 8;
+let currentPage = 1;
+
 function parseDate(s) {
   const d = new Date(s);
   return isNaN(d) ? new Date() : d;
 }
-function keyFor(item) { return `${item.title}|${item.date}`; }
+
+function keyFor(item) {
+  return `${item.title}|${item.date}`;
+}
 
 function normalizeItem(it) {
   return {
@@ -54,11 +59,16 @@ function uniqueTags(list) {
 }
 
 function renderChips(tags) {
-  els.chips.innerHTML = tags.map(t =>
-    `<button class="chip ${t === activeTag ? "active" : ""}" data-tag="${t}">${t}</button>`
-  ).join("");
+  els.chips.innerHTML = tags.map(t => `
+    <button class="chip ${t === activeTag ? "active" : ""}" data-tag="${t}">${t}</button>
+  `).join("");
+
   els.chips.querySelectorAll(".chip").forEach(btn => {
-    btn.addEventListener("click", () => { activeTag = btn.dataset.tag; render(); });
+    btn.addEventListener("click", () => {
+      activeTag = btn.dataset.tag;
+      currentPage = 1; // reset to first page when tag changes
+      render();
+    });
   });
 }
 
@@ -66,36 +76,73 @@ function currentFilters() {
   const q = (els.search.value || "").toLowerCase().trim();
   return (n) => {
     const hitTag = (activeTag === "All") || (n.tag === activeTag);
-    const hitText = !q || n.title.toLowerCase().includes(q)
-                     || n.summary.toLowerCase().includes(q)
-                     || n.tag.toLowerCase().includes(q);
+    const hitText = !q || (n.title.toLowerCase().includes(q) || n.summary.toLowerCase().includes(q) || n.tag.toLowerCase().includes(q));
     return hitTag && hitText;
   };
 }
 
 function sorters(mode) {
   switch (mode) {
-    case "dateAsc": return (a,b) => a.dateObj - b.dateObj;
-    case "mostViewed": return (a,b) => (views[keyFor(b)]||0) - (views[keyFor(a)]||0);
+    case "dateAsc":
+      return (a,b) => a.dateObj - b.dateObj;
+    case "mostViewed":
+      return (a,b) => (views[keyFor(b)]||0) - (views[keyFor(a)]||0);
     case "dateDesc":
-    default: return (a,b) => b.dateObj - a.dateObj;
+    default:
+      return (a,b) => b.dateObj - a.dateObj;
   }
 }
 
-function linkQuery(item){
-  const params = new URLSearchParams();
-  if (item.region) params.set("region", item.region);
-  if (item.material) params.set("material", item.material);
-  const str = params.toString();
-  return str ? `?${str}` : "";
+function renderPagination(totalPages) {
+  // Nothing to paginate
+  if (totalPages <= 1) {
+    els.pager.innerHTML = "";
+    return;
+  }
+
+  const prevDisabled = currentPage === 1 ? "disabled" : "";
+  const nextDisabled = currentPage === totalPages ? "disabled" : "";
+
+  els.pager.innerHTML = `
+    <button class="btn ghost pager-btn" id="pgPrev" ${prevDisabled}>‹ Prev</button>
+    <span class="pager-info">Page ${currentPage} of ${totalPages}</span>
+    <button class="btn primary pager-btn" id="pgNext" ${nextDisabled}>Next ›</button>
+  `;
+
+  const prev = document.getElementById("pgPrev");
+  const next = document.getElementById("pgNext");
+
+  if (prev) prev.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+  if (next) next.addEventListener("click", () => {
+    currentPage++;
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 }
 
 function render() {
-  const list = allNews.filter(currentFilters()).sort(sorters(els.sort.value));
-  els.container.innerHTML = "";
-  els.empty.classList.toggle("hidden", list.length !== 0);
+  // Apply filters + sort
+  const listFilteredSorted = allNews.filter(currentFilters()).sort(sorters(els.sort.value));
 
-  list.forEach(item => {
+  // Empty state
+  els.empty.classList.toggle("hidden", listFilteredSorted.length !== 0);
+
+  // Pagination math
+  const totalPages = Math.max(1, Math.ceil(listFilteredSorted.length / itemsPerPage));
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+  const start = (currentPage - 1) * itemsPerPage;
+  const pageItems = listFilteredSorted.slice(start, start + itemsPerPage);
+
+  // Render cards for current page
+  els.container.innerHTML = "";
+  pageItems.forEach(item => {
     const viewKey = keyFor(item);
     const viewCount = views[viewKey] || 0;
 
@@ -108,23 +155,40 @@ function render() {
         <span>${item.date}</span>
         ${viewCount ? ` · <span title="views">${viewCount} views</span>` : ""}
       </div>
+
       <h3>${item.title}</h3>
+
       <p class="summary">${item.summary}</p>
+
       ${item.impact ? `<div class="impact"><strong>Peltra Impact:</strong> ${item.impact}</div>` : ""}
+
       <div class="actions">
         <a class="btn primary" href="${item.link}" target="_blank" rel="noopener">Read more →</a>
         ${item.material || item.region ? `<a class="btn ghost" href="market.html${linkQuery(item)}">View price trend</a>` : ""}
       </div>
     `;
-    card.querySelector(".btn.primary").addEventListener("click", () => bumpView(viewKey));
+
+    const readBtn = card.querySelector(".btn.primary");
+    readBtn.addEventListener("click", () => bumpView(viewKey));
+
     els.container.appendChild(card);
   });
+
+  // Render pager
+  renderPagination(totalPages);
+}
+
+function linkQuery(item){
+  const params = new URLSearchParams();
+  if (item.region) params.set("region", item.region);
+  if (item.material) params.set("material", item.material);
+  const str = params.toString();
+  return str ? `?${str}` : "";
 }
 
 async function loadNews() {
   try {
     const res = await fetch(NEWS_PATH, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Fetch ${NEWS_PATH} ${res.status}`);
     const raw = await res.json();
     allNews = raw.map(normalizeItem);
 
@@ -145,8 +209,14 @@ async function loadNews() {
 }
 
 function wireControls() {
-  ["input","change"].forEach(ev => els.search.addEventListener(ev, render));
-  els.sort.addEventListener("change", render);
+  ["input","change"].forEach(ev => els.search.addEventListener(ev, () => {
+    currentPage = 1;
+    render();
+  }));
+  els.sort.addEventListener("change", () => {
+    currentPage = 1;
+    render();
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
