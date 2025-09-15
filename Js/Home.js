@@ -1,5 +1,5 @@
 // Home page data + charts + insights (AVERAGE by default, no dropdown)
-const API_URL = "https://api.sheetbest.com/sheets/5ac0ae3c-c8d3-4f90-a9af-18198287e688";
+const API_URL = "https://api.sheetbest.com/sheets/cab2f0a4-a638-4a03-91a0-cc5a12548c6a";
 
 let sheetData = [];
 let pelletChartInstance = null;
